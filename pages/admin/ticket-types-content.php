@@ -136,7 +136,7 @@ $type_icons = [
                 <label class="block text-xs mb-1" style="color: var(--text-secondary);">
                     <?php echo e(t('Icon')); ?>
                 </label>
-                <div class="grid grid-cols-6 gap-1">
+                <div class="grid grid-cols-4 gap-1">
                     <?php foreach ($type_icons as $icon => $label): ?>
                     <label class="relative cursor-pointer" title="<?php echo e($label); ?>">
                         <input type="radio" name="icon" value="<?php echo $icon; ?>" class="sr-only peer">
@@ -248,7 +248,7 @@ $type_icons = [
                                 <label class="block text-xs mb-1" style="color: var(--text-secondary);">
                                     <?php echo e(t('Icon')); ?>
                                 </label>
-                                <div class="grid grid-cols-6 gap-1">
+                                <div class="grid grid-cols-4 gap-1">
                                     <?php foreach ($type_icons as $icon => $label): ?>
                                     <label class="relative cursor-pointer" title="<?php echo e($label); ?>">
                                         <input type="radio" name="icon" value="<?php echo $icon; ?>" class="sr-only peer" <?php echo $type['icon'] === $icon ? 'checked' : ''; ?>>

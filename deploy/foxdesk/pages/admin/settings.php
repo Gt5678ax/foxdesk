@@ -1929,15 +1929,12 @@ include BASE_PATH . '/includes/components/page-header.php';
         </div>
 
 
-        <?php if (file_exists(BASE_PATH . '/install.php')): ?>
-            <div class="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 flex items-center gap-2">
-                <?php echo get_icon('exclamation-triangle', 'w-4 h-4 text-yellow-600 flex-shrink-0'); ?>
-                <p class="text-yellow-700 text-xs">
-                    <span class="font-semibold"><?php echo e(t('Security warning')); ?>:</span>
-                    <?php echo e(t('The install.php file still exists. Remove it for better security.')); ?>
-                </p>
-            </div>
-        <?php endif; ?>
+        <?php
+        // Auto-remove install.php if it still exists (no longer needed after setup)
+        if (file_exists(BASE_PATH . '/install.php')) {
+            @unlink(BASE_PATH . '/install.php');
+        }
+        ?>
 
         <?php
         // Post-update health check — show only right after a successful update

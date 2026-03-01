@@ -1,12 +1,10 @@
 {
-    "version": "0.3.51",
+    "version": "0.3.52",
     "date": "2026-03-01",
     "min_php": "8.1",
     "changelog": [
-        "Simplify update to one-click install from Settings",
-        "Fix broken emoji encoding in update banner",
-        "Remove user attribution from update history and backups",
-        "Clean up footer branding"
+        "Fix ticket type icon picker layout (grid instead of vertical list)",
+        "Auto-remove install.php after setup for security"
     ],
     "delete_files": []
 }
