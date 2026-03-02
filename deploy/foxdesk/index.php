@@ -31,7 +31,7 @@ header('Content-Type: text/html; charset=UTF-8');
 
 // Define base path
 define('BASE_PATH', __DIR__);
-define('APP_VERSION', '0.3.55');
+define('APP_VERSION', '0.3.56');
 
 // Maintenance mode – shown during update/rollback operations.
 // The .maintenance file is created by apply_update()/rollback_update()
