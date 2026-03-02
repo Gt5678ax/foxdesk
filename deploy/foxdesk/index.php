@@ -104,7 +104,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 // Pages that don't require login
-$public_pages = ['login', 'logout', 'forgot-password', 'reset-password', 'ticket-share', 'report-share', 'report-public', 'api'];
+$public_pages = ['login', 'logout', 'forgot-password', 'reset-password', 'ticket-share', 'report-share', 'report-public', 'api', 'health'];
 
 // Check authentication
 if (!in_array($page, $public_pages)) {
@@ -155,6 +155,23 @@ if (!in_array($page, $public_pages)) {
         header('Location: index.php?page=login');
         exit;
     }
+}
+
+// Health check endpoint (for uptime monitoring)
+if ($page === 'health') {
+    header('Content-Type: application/json');
+    $health = ['status' => 'ok', 'version' => APP_VERSION];
+    try {
+        db_fetch_one("SELECT 1");
+        $health['db'] = true;
+    } catch (Throwable $e) {
+        $health['status'] = 'error';
+        $health['db'] = false;
+    }
+    $health['php'] = PHP_VERSION;
+    $health['timestamp'] = gmdate('Y-m-d\TH:i:s\Z');
+    echo json_encode($health);
+    exit;
 }
 
 // API endpoints
