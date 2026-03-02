@@ -304,29 +304,29 @@ include BASE_PATH . '/includes/components/page-header.php';
             </div>
 
 
-            <!-- File Upload -->
-            <div>
-                <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Attachments')); ?></label>
-                <div id="upload-zone" class="rounded-lg p-2 flex items-center gap-2 cursor-pointer border-2 border-dashed hover:border-blue-300 transition-colors" style="border-color: var(--border-light);">
-                    <input type="file" name="attachments[]" id="file-input" multiple class="hidden"
-                        accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
-                    <?php echo get_icon('cloud-upload-alt', 'text-lg flex-shrink-0'); ?>
-                    <div class="flex-1 text-left min-w-0">
-                        <p class="text-xs" style="color: var(--text-secondary);">
-                            <span class="text-blue-500 font-medium"><?php echo e(t('Click')); ?></span>
-                            <?php echo e(t('or drag files')); ?>
-                        </p>
+            <!-- File Upload + Company row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Attachments')); ?></label>
+                    <div id="upload-zone" class="rounded-lg p-2 flex items-center gap-2 cursor-pointer border-2 border-dashed hover:border-blue-300 transition-colors" style="border-color: var(--border-light);">
+                        <input type="file" name="attachments[]" id="file-input" multiple class="hidden"
+                            accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+                        <?php echo get_icon('cloud-upload-alt', 'text-lg flex-shrink-0'); ?>
+                        <div class="flex-1 text-left min-w-0">
+                            <p class="text-xs" style="color: var(--text-secondary);">
+                                <span class="text-blue-500 font-medium"><?php echo e(t('Click')); ?></span>
+                                <?php echo e(t('or drag files')); ?>
+                            </p>
+                        </div>
                     </div>
+                    <p class="text-xs mt-1" style="color: var(--text-muted);">
+                        <?php echo e(t('Max {size}MB. Types: JPG, PNG, GIF, PDF, DOC, XLS, TXT, ZIP', ['size' => get_max_upload_size_mb()])); ?>
+                    </p>
+                    <!-- File preview -->
+                    <div id="file-preview" class="mt-1.5 space-y-1 hidden"></div>
                 </div>
-                <p class="text-xs mt-1" style="color: var(--text-muted);">
-                    <?php echo e(t('Max {size}MB. Types: JPG, PNG, GIF, PDF, DOC, XLS, TXT, ZIP', ['size' => get_max_upload_size_mb()])); ?>
-                </p>
-                <!-- File preview -->
-                <div id="file-preview" class="mt-1.5 space-y-1 hidden"></div>
-            </div>
 
-            <!-- Company -->
-            <?php if (!empty($organizations)): ?>
+                <?php if (!empty($organizations)): ?>
                 <div>
                     <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Company')); ?></label>
                     <select name="organization_id" class="form-select">
@@ -338,7 +338,8 @@ include BASE_PATH . '/includes/components/page-header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-            <?php endif; ?>
+                <?php endif; ?>
+            </div>
 
             <!-- Advanced Settings (collapsible) -->
             <details class="group">
@@ -347,7 +348,7 @@ include BASE_PATH . '/includes/components/page-header.php';
                     <?php echo e(t('Advanced')); ?>
                 </summary>
                 <div class="pt-2 space-y-4">
-                    <!-- Priority, Ticket Type, Due Date, Assign To, On Behalf Of, Company in one grid -->
+                    <!-- Priority, Ticket Type, Due Date, Assign To, On Behalf Of -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         <!-- Priority -->
                         <div>
@@ -426,10 +427,8 @@ include BASE_PATH . '/includes/components/page-header.php';
                         </div>
                         <?php endif; ?>
 
-                    </div>
-
-                    <!-- Tags -->
-                    <?php if ($tags_supported): ?>
+                        <!-- Tags (next to On Behalf Of) -->
+                        <?php if ($tags_supported): ?>
                         <div>
                             <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Tags')); ?></label>
                             <input type="hidden" name="tags" id="nt-tags-value" value="<?php echo e($_POST['tags'] ?? ''); ?>">
@@ -443,7 +442,9 @@ include BASE_PATH . '/includes/components/page-header.php';
                                 <div id="cs-tags-hidden"></div>
                             </div>
                         </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
+
+                    </div>
                 </div>
             </details>
         </div>

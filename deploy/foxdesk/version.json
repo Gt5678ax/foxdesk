@@ -1,16 +1,10 @@
 {
-    "version": "0.3.53",
+    "version": "0.3.54",
     "date": "2026-03-02",
     "min_php": "8.1",
     "changelog": [
-        "Fix comment editing (Failed to update comment error)",
-        "Fix company/client change not saving on existing tickets",
-        "Company field always visible when creating new ticket",
-        "Tags moved to Advanced section",
-        "Fix Quick Start highlighting both menu items",
-        "Rename Organizations to Clients across all languages",
-        "Fix time display to show minutes/hours instead of decimals",
-        "Submit button renamed to Save"
+        "Attachments and Company fields on one row",
+        "Tags moved next to On Behalf Of in Advanced grid"
     ],
     "delete_files": []
 }
