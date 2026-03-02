@@ -1,6 +1,6 @@
 # FoxDesk — Complete User Manual
 
-> **Version 0.3.42** | Last Updated: 2026-02-26
+> **Version 0.3.57** | Last Updated: 2026-03-02
 > Self-hosted PHP helpdesk & time-tracking platform
 
 ---
@@ -390,6 +390,9 @@ The dashboard uses a **3-column CSS grid layout** on desktop (2-column on tablet
 | **Tickets by Status** | Visual breakdown of all tickets grouped by status (bar/list). |
 | **Tickets by Priority** | Breakdown by priority level. |
 | **Recent Tickets** | List of the 10 most recently updated tickets. |
+| **My Time** | Shows your logged time for Today / This week / This month with progress bars. Times are displayed in human-readable format (e.g. "1h 15min", "42 min"). |
+| **Team** | Table of all agents with their logged time (Today, This week, This month). Includes a totals row. |
+| **Team Time** | Aggregate team time for Today / This week / This month with progress bars. |
 | **Organization Summary** | (Admin only) Quick overview of tickets per organization. |
 
 **Widgets available to Users (Customers):**
@@ -461,6 +464,7 @@ Navigate to **New Ticket** in the sidebar or click the "+" button.
 | **Due Date** | No | Optional deadline. Uses a date picker (Flatpickr). |
 | **Tags** | No | Comma-separated tags for categorization (e.g. `VIP, billing, server-02`). |
 | **Attachments** | No | Upload files (drag-and-drop or click to browse). Max file size is configured in `config.php` (default: 10 MB). |
+| **Time (min)** | No | (Agents only) Manual time input in minutes. Enter the number of minutes spent and a time entry will be created automatically with the ticket. If both the timer and manual time are provided, manual time takes priority. |
 
 > **Tip:** When a user (customer) creates a ticket, they see a simplified form without the assignee field. The organization is automatically set based on their account.
 
@@ -744,16 +748,28 @@ Each ticket has a timer that agents can start, pause, resume, and stop:
 
 ### 8.2 Manual Time Entry
 
-Agents can also add time entries manually without using the live timer:
+Agents can add time entries manually without using the live timer:
 
-1. On the ticket detail page, find the time tracking section.
-2. Click **Add Manual Entry**.
-3. Fill in:
+**On the ticket detail page:**
+
+1. Click the **pen icon** (✏️) next to the timer controls to open the manual entry form.
+2. Fill in:
    - **Date** — When the work was done.
-   - **Duration** — Hours and minutes.
-   - **Summary** — Description of the work.
+   - **Start / End** — Start and end time. Duration is calculated automatically.
+   - **Summary** — Description of the work (optional — time entries can be logged without a comment).
    - **Billable** — Toggle billable/non-billable.
-4. Click **Save**.
+3. Click **Send update** to save the time entry.
+
+> **Note:** Time entries can be added standalone without writing a comment. This is useful for quickly logging time spent on a ticket without needing to explain the work in a separate comment.
+
+**On the new ticket form:**
+
+Agents can also log time directly when creating a new ticket:
+
+1. Next to the timer, there is a **Time (min)** input field.
+2. Enter the number of minutes spent.
+3. When the ticket is saved, a time entry labeled "Ticket creation" is automatically created.
+4. If both the timer and manual time are provided, the manual time takes priority.
 
 ### 8.3 Inline Editing of Time Entries
 
@@ -1935,6 +1951,19 @@ A: Ensure your database uses `utf8mb4_unicode_ci` collation. Also ensure `config
 
 ## 25. Changelog (Recent)
 
+### v0.3.57 (2026-03-02)
+
+- **Fix:** Dashboard time display now shows human-readable format ("1h 15min", "42 min") instead of confusing decimal hours ("0.7h", "1.3h").
+- **Removed:** "Create another" checkbox on the new ticket form (was rarely used).
+- **New:** Manual time input (minutes) on the new ticket form — agents can log time spent directly when creating a ticket.
+- **New:** Standalone time entries on ticket detail — agents can now log time without being required to write a comment.
+
+### v0.3.56 (2026-03-02)
+
+- **Fix:** Attachments and Company fields on one row in new ticket form.
+- **Fix:** Tags moved next to On Behalf Of in Advanced grid.
+- **Fix:** Update package structure (forward slashes in ZIP).
+
 ### v0.3.42 (2026-02-26)
 
 - **Fix:** Update notification now properly clears after applying an update (the "Update ready to install" message no longer persists).
@@ -2067,4 +2096,4 @@ Both must be set appropriately. The application enforces the lower of the two li
 
 ---
 
-*This manual covers FoxDesk v0.3.42. For the latest updates and community support, visit the project repository.*
+*This manual covers FoxDesk v0.3.57. For the latest updates and community support, visit the project repository.*
