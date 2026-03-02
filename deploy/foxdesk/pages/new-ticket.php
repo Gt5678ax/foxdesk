@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $organization_id = !empty($_POST['organization_id']) ? (int) $_POST['organization_id'] : null;
         $assignee_id = (is_admin() || is_agent()) && !empty($_POST['assignee_id']) ? (int) $_POST['assignee_id'] : null;
         $on_behalf_of = (is_admin() || is_agent()) && !empty($_POST['on_behalf_of']) ? (int) $_POST['on_behalf_of'] : null;
-        $create_another = !empty($_POST['create_another']);
+        $manual_duration_minutes = (int) ($_POST['manual_duration_minutes'] ?? 0);
 
         // Resolve ticket owner: agent can create on behalf of another user
         $ticket_owner_id = $user['id'];
@@ -139,17 +139,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             log_activity($ticket_id, $user['id'], 'created', 'Ticket created');
 
-            // Save timer elapsed time as time entry
+            // Save time entry — manual duration takes priority over timer
             $timer_elapsed = (int) ($_POST['timer_elapsed_seconds'] ?? 0);
-            if ($timer_elapsed > 0 && is_agent() && function_exists('ticket_time_table_exists') && ticket_time_table_exists() && function_exists('add_manual_time_entry')) {
-                $duration_minutes = max(1, (int) round($timer_elapsed / 60));
-                add_manual_time_entry($ticket_id, $user['id'], [
-                    'started_at' => date('Y-m-d H:i:s', time() - $timer_elapsed),
-                    'ended_at' => date('Y-m-d H:i:s'),
-                    'duration_minutes' => $duration_minutes,
-                    'summary' => t('Ticket creation'),
-                    'is_billable' => 1,
-                ]);
+            if (is_agent() && function_exists('ticket_time_table_exists') && ticket_time_table_exists() && function_exists('add_manual_time_entry')) {
+                $time_minutes = 0;
+                if ($manual_duration_minutes > 0) {
+                    $time_minutes = $manual_duration_minutes;
+                } elseif ($timer_elapsed > 0) {
+                    $time_minutes = max(1, (int) round($timer_elapsed / 60));
+                }
+                if ($time_minutes > 0) {
+                    add_manual_time_entry($ticket_id, $user['id'], [
+                        'started_at' => date('Y-m-d H:i:s', time() - ($time_minutes * 60)),
+                        'ended_at' => date('Y-m-d H:i:s'),
+                        'duration_minutes' => $time_minutes,
+                        'summary' => t('Ticket creation'),
+                        'is_billable' => 1,
+                    ]);
+                }
             }
 
             // Handle file uploads
@@ -221,11 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($upload_errors)) {
                 flash(t('Ticket created successfully.'), 'success');
             }
-            if ($create_another) {
-                redirect('new-ticket');
-            } else {
-                redirect('ticket', ['id' => $ticket_id]);
-            }
+            redirect('ticket', ['id' => $ticket_id]);
         }
     }
 }
@@ -469,13 +472,16 @@ include BASE_PATH . '/includes/components/page-header.php';
                             <?php echo get_icon('trash', 'w-4 h-4'); ?>
                         </button>
                     </div>
+                    <div class="flex items-center gap-1.5">
+                        <?php echo get_icon('clock', 'w-4 h-4 flex-shrink-0'); ?>
+                        <input type="number" name="manual_duration_minutes" min="0" step="1"
+                            placeholder="<?php echo e(t('min')); ?>"
+                            class="form-input w-20 text-sm py-1.5"
+                            title="<?php echo e(t('Time (min)')); ?>">
+                    </div>
                 <?php endif; ?>
             </div>
             <div class="flex items-center gap-3">
-                <label class="inline-flex items-center text-xs cursor-pointer" style="color: var(--text-secondary);">
-                    <input type="checkbox" name="create_another" value="1" class="mr-1.5 rounded">
-                    <?php echo e(t('Create another')); ?>
-                </label>
                 <a href="<?php echo url('dashboard'); ?>" class="btn btn-ghost flex items-center">
                     <?php echo e(t('Cancel')); ?>
                 </a>

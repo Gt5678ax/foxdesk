@@ -179,9 +179,9 @@ function get_dashboard_data($user, $tags = [])
             WHERE user_id = ? AND ended_at IS NOT NULL
         ", [$week_start, $week_end, $month_start, $month_end, $user['id']]);
 
-        $my_time_today = round(($my_time['today'] ?? 0) / 60, 1);
-        $my_time_week = round(($my_time['week'] ?? 0) / 60, 1);
-        $my_time_month = round(($my_time['month'] ?? 0) / 60, 1);
+        $my_time_today = (int) ($my_time['today'] ?? 0);
+        $my_time_week = (int) ($my_time['week'] ?? 0);
+        $my_time_month = (int) ($my_time['month'] ?? 0);
 
         if ($is_admin) {
             $team_time = db_fetch_one("
@@ -194,9 +194,9 @@ function get_dashboard_data($user, $tags = [])
                 WHERE u.role IN ('agent', 'admin') AND tte.ended_at IS NOT NULL
             ", [$week_start, $week_end, $month_start, $month_end]);
 
-            $team_time_today = round(($team_time['today'] ?? 0) / 60, 1);
-            $team_time_week = round(($team_time['week'] ?? 0) / 60, 1);
-            $team_time_month = round(($team_time['month'] ?? 0) / 60, 1);
+            $team_time_today = (int) ($team_time['today'] ?? 0);
+            $team_time_week = (int) ($team_time['week'] ?? 0);
+            $team_time_month = (int) ($team_time['month'] ?? 0);
 
             // Per-member breakdown
             $team_members_time = db_fetch_all("

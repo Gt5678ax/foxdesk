@@ -865,16 +865,16 @@ require_once BASE_PATH . '/includes/header.php';
                     <div>
                         <?php
                         $time_periods = [
-                            ['label' => t('Today'), 'value' => $my_time_today, 'target' => 8],
-                            ['label' => t('This week'), 'value' => $my_time_week, 'target' => 40],
-                            ['label' => t('This Month'), 'value' => $my_time_month, 'target' => 160],
+                            ['label' => t('Today'), 'value' => $my_time_today, 'target' => 480],
+                            ['label' => t('This week'), 'value' => $my_time_week, 'target' => 2400],
+                            ['label' => t('This Month'), 'value' => $my_time_month, 'target' => 9600],
                         ];
                         foreach ($time_periods as $tp):
                             $pct = $tp['target'] > 0 ? min(100, round(($tp['value'] / $tp['target']) * 100)) : 0;
                             ?>
                             <a href="<?php echo $link_reports; ?>" class="db-time-row">
                                 <span class="db-time-label"><?php echo e($tp['label']); ?></span>
-                                <span class="db-time-value"><?php echo $tp['value']; ?>h</span>
+                                <span class="db-time-value"><?php echo format_duration_minutes($tp['value']); ?></span>
                                 <div class="db-time-bar-wrap">
                                     <div class="db-time-bar" style="width: <?php echo $pct; ?>%"></div>
                                 </div>
@@ -913,9 +913,9 @@ require_once BASE_PATH . '/includes/header.php';
                                 <tbody>
                                     <?php foreach ($team_members_time as $member):
                                         $initials = mb_substr($member['first_name'], 0, 1) . mb_substr($member['last_name'] ?? '', 0, 1);
-                                        $m_today = round(($member['today_mins'] ?? 0) / 60, 1);
-                                        $m_week = round(($member['week_mins'] ?? 0) / 60, 1);
-                                        $m_month = round(($member['month_mins'] ?? 0) / 60, 1);
+                                        $m_today = (int) ($member['today_mins'] ?? 0);
+                                        $m_week = (int) ($member['week_mins'] ?? 0);
+                                        $m_month = (int) ($member['month_mins'] ?? 0);
                                         $role_class = $member['role'] === 'admin' ? 'db-role-badge--admin' : 'db-role-badge--agent';
                                         $member_link = url('admin', ['section' => 'reports']);
                                         ?>
@@ -933,18 +933,18 @@ require_once BASE_PATH . '/includes/header.php';
                                                 <span
                                                     class="db-role-badge <?php echo $role_class; ?>"><?php echo e(ucfirst($member['role'])); ?></span>
                                             </td>
-                                            <td><?php echo $m_today > 0 ? $m_today . 'h' : '—'; ?></td>
-                                            <td><?php echo $m_week > 0 ? $m_week . 'h' : '—'; ?></td>
-                                            <td><?php echo $m_month > 0 ? $m_month . 'h' : '—'; ?></td>
+                                            <td><?php echo $m_today > 0 ? format_duration_minutes($m_today) : '—'; ?></td>
+                                            <td><?php echo $m_week > 0 ? format_duration_minutes($m_week) : '—'; ?></td>
+                                            <td><?php echo $m_month > 0 ? format_duration_minutes($m_month) : '—'; ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
                                 <tfoot>
                                     <tr>
                                         <td colspan="2" class="font-bold"><?php echo e(t('Total')); ?></td>
-                                        <td><?php echo $team_time_today; ?>h</td>
-                                        <td><?php echo $team_time_week; ?>h</td>
-                                        <td><?php echo $team_time_month; ?>h</td>
+                                        <td><?php echo format_duration_minutes($team_time_today); ?></td>
+                                        <td><?php echo format_duration_minutes($team_time_week); ?></td>
+                                        <td><?php echo format_duration_minutes($team_time_month); ?></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -953,16 +953,16 @@ require_once BASE_PATH . '/includes/header.php';
                         <div>
                             <?php
                             $team_periods = [
-                                ['label' => t('Today'), 'value' => $team_time_today, 'target' => 24],
-                                ['label' => t('This week'), 'value' => $team_time_week, 'target' => 120],
-                                ['label' => t('This Month'), 'value' => $team_time_month, 'target' => 480],
+                                ['label' => t('Today'), 'value' => $team_time_today, 'target' => 1440],
+                                ['label' => t('This week'), 'value' => $team_time_week, 'target' => 7200],
+                                ['label' => t('This Month'), 'value' => $team_time_month, 'target' => 28800],
                             ];
                             foreach ($team_periods as $tp):
                                 $pct = $tp['target'] > 0 ? min(100, round(($tp['value'] / $tp['target']) * 100)) : 0;
                                 ?>
                                 <a href="<?php echo $link_reports; ?>" class="db-time-row">
                                     <span class="db-time-label"><?php echo e($tp['label']); ?></span>
-                                    <span class="db-time-value"><?php echo $tp['value']; ?>h</span>
+                                    <span class="db-time-value"><?php echo format_duration_minutes($tp['value']); ?></span>
                                     <div class="db-time-bar-wrap">
                                         <div class="db-time-bar" style="width: <?php echo $pct; ?>%"></div>
                                     </div>

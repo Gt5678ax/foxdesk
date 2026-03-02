@@ -503,14 +503,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        if ($log_time_requested && empty($content)) {
-            flash(t('Please add a comment explaining the work done before logging time.'), 'error');
-            redirect('ticket', ['id' => $ticket_id]);
-        }
-
-        // Add comment only if there's content
+        // Add comment only if there's content or attachments
         $comment_id = null;
-        $should_create_comment = (!empty($content) || $has_attachments || $log_time_requested);
+        $should_create_comment = (!empty($content) || $has_attachments);
         if ($should_create_comment) {
             $comment_id = db_insert('comments', [
                 'ticket_id' => $ticket_id,
@@ -581,7 +576,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Log time entries (if requested)
-        if ($comment_id && $log_time_requested) {
+        if ($log_time_requested) {
             if ($stop_timer && $active_timer) {
                 db_update('ticket_time_entries', [
                     'ended_at' => date('Y-m-d H:i:s'),
@@ -636,6 +631,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Flash message based on what was done
         if (!empty($content)) {
             flash(t('Comment added.'), 'success');
+        } elseif ($log_time_requested) {
+            flash(t('Time entry added.'), 'success');
         } elseif (isset($_POST['change_status_with_comment']) && is_agent()) {
             flash(t('Status updated.'), 'success');
         }
