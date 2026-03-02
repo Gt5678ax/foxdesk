@@ -1,11 +1,12 @@
 {
-    "version": "0.3.56",
+    "version": "0.3.57",
     "date": "2026-03-02",
     "min_php": "8.1",
     "changelog": [
-        "Attachments and Company fields on one row",
-        "Tags moved next to On Behalf Of in Advanced grid",
-        "Fixed update package structure"
+        "Fixed dashboard time display - shows human-readable format (1h 15min) instead of decimal hours (1.3h)",
+        "Removed Create another checkbox from new ticket form",
+        "Added manual time input (minutes) on new ticket form",
+        "Allow standalone time entries on ticket detail without requiring a comment"
     ],
     "delete_files": []
 }
