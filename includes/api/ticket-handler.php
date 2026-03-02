@@ -485,8 +485,7 @@ function api_edit_comment() {
     // Update the comment
     try {
         db_update('comments', [
-            'content' => $content,
-            'updated_at' => date('Y-m-d H:i:s')
+            'content' => $content
         ], 'id = ?', [$comment_id]);
 
         if (function_exists('log_ticket_history')) {

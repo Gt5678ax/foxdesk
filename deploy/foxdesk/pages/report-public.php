@@ -310,10 +310,7 @@ $extract_report_tags = static function ($value) {
                     <?php echo get_icon('clock', 'text-3xl opacity-80 inline-block'); ?>
                     <span class="text-xs font-semibold uppercase tracking-wide"><?php echo e(t('Total Time')); ?></span>
                 </div>
-                <div class="text-4xl font-bold"><?php echo number_format($kpis['total_hours'], 1); ?>h</div>
-                <div class="text-sm font-medium mt-1">
-                    <?php echo e(format_duration_minutes((int) ($kpis['total_minutes'] ?? 0))); ?>
-                </div>
+                <div class="text-4xl font-bold"><?php echo e(format_duration_minutes((int) ($kpis['total_minutes'] ?? 0))); ?></div>
             </div>
 
             <!-- Total Tasks -->

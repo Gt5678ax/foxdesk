@@ -38,6 +38,12 @@ if (!can_see_ticket($ticket, $user)) {
     redirect('tickets');
 }
 
+// Auto mark notification as read when arriving from a notification link
+$nid = isset($_GET['nid']) ? (int) $_GET['nid'] : 0;
+if ($nid > 0 && function_exists('mark_notification_read')) {
+    mark_notification_read($nid, (int) $user['id']);
+}
+
 $page_title = $ticket['title'];
 $page = 'ticket';
 $all_comments = get_ticket_comments($ticket_id);
@@ -414,6 +420,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     require_once BASE_PATH . '/includes/mailer.php';
                     send_status_change_notification($ticket, $old_status, $new_status, '', 0);
                 }
+
+                // In-app notification for status change
+                if (function_exists('dispatch_ticket_notifications')) {
+                    dispatch_ticket_notifications('status_changed', $ticket_id, $user['id'], [
+                        'old_status' => $old_status['name'] ?? '',
+                        'new_status' => $new_status['name'] ?? '',
+                    ]);
+                }
             }
         }
 
@@ -610,6 +624,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             send_new_comment_notification($ticket, $comment_data, $user, $comment_id, $uploaded_attachments, $cc_users);
         }
 
+        // In-app notification for new comment
+        if ($comment_id && !$is_internal && !empty($content) && function_exists('dispatch_ticket_notifications')) {
+            $preview = mb_strlen($content) > 80 ? mb_substr($content, 0, 77) . '...' : $content;
+            dispatch_ticket_notifications('new_comment', $ticket_id, $user['id'], [
+                'comment_preview' => strip_tags($preview),
+                'comment_id' => $comment_id,
+            ]);
+        }
+
         // Flash message based on what was done
         if (!empty($content)) {
             flash(t('Comment added.'), 'success');
@@ -646,6 +669,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         require_once BASE_PATH . '/includes/mailer.php';
         send_status_change_notification($ticket, $old_status, $new_status, $status_comment, 0);
 
+        // In-app notification for status change
+        if (function_exists('dispatch_ticket_notifications')) {
+            dispatch_ticket_notifications('status_changed', $ticket_id, $user['id'], [
+                'old_status' => $old_status['name'] ?? '',
+                'new_status' => $new_status['name'] ?? '',
+            ]);
+        }
+
         flash(t('Status updated.'), 'success');
         redirect('ticket', ['id' => $ticket_id]);
     }
@@ -667,6 +698,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Send email notification to assigned agent
             require_once BASE_PATH . '/includes/mailer.php';
             send_ticket_assignment_notification($ticket, $assigned_user, $user);
+
+            // In-app notification for assignment
+            if (function_exists('dispatch_ticket_notifications')) {
+                dispatch_ticket_notifications('assigned_to_you', $ticket_id, $user['id'], [
+                    'assignee_id' => $assignee_id,
+                ]);
+            }
 
             flash(t('Ticket assigned.'), 'success');
         } else {
@@ -700,6 +738,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash(t('Due date removed.'), 'success');
         }
 
+        redirect('ticket', ['id' => $ticket_id]);
+    }
+
+    // Update company (quick sidebar form)
+    if (isset($_POST['update_company']) && is_agent()) {
+        $new_org_id = null;
+        $org_input = trim((string) ($_POST['organization_id'] ?? ''));
+        if ($org_input !== '') {
+            $new_org_id = (int) $org_input;
+        }
+        $old_org_id = $ticket['organization_id'] ?? null;
+        db_update('tickets', ['organization_id' => $new_org_id], 'id = ?', [$ticket_id]);
+        if (function_exists('log_ticket_history')) {
+            log_ticket_history($ticket_id, $user['id'], 'organization_id', $old_org_id, $new_org_id);
+        }
+        log_activity($ticket_id, $user['id'], 'company_updated', 'Company updated');
+        flash(t('Company updated.'), 'success');
         redirect('ticket', ['id' => $ticket_id]);
     }
 
@@ -1125,7 +1180,17 @@ require_once BASE_PATH . '/includes/header.php';
         <!-- Ticket Toolbar - compact icon bar -->
         <div class="card px-2 py-1.5">
             <div class="flex items-center gap-1">
-                <a href="<?php echo url('tickets'); ?>" class="td-tool-btn" title="<?php echo e(t('Back')); ?>">
+                <?php
+                $back_ref = $_GET['ref'] ?? '';
+                if ($back_ref === 'dashboard') {
+                    $back_url = url('dashboard');
+                } elseif ($back_ref === 'notifications') {
+                    $back_url = url('notifications');
+                } else {
+                    $back_url = url('tickets');
+                }
+                ?>
+                <a href="<?php echo $back_url; ?>" class="td-tool-btn" title="<?php echo e(t('Back')); ?>">
                     <?php echo get_icon('arrow-left', 'w-3.5 h-3.5'); ?>
                 </a>
                 <span class="td-tool-sep"></span>

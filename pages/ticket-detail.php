@@ -741,6 +741,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('ticket', ['id' => $ticket_id]);
     }
 
+    // Update company (quick sidebar form)
+    if (isset($_POST['update_company']) && is_agent()) {
+        $new_org_id = null;
+        $org_input = trim((string) ($_POST['organization_id'] ?? ''));
+        if ($org_input !== '') {
+            $new_org_id = (int) $org_input;
+        }
+        $old_org_id = $ticket['organization_id'] ?? null;
+        db_update('tickets', ['organization_id' => $new_org_id], 'id = ?', [$ticket_id]);
+        if (function_exists('log_ticket_history')) {
+            log_ticket_history($ticket_id, $user['id'], 'organization_id', $old_org_id, $new_org_id);
+        }
+        log_activity($ticket_id, $user['id'], 'company_updated', 'Company updated');
+        flash(t('Company updated.'), 'success');
+        redirect('ticket', ['id' => $ticket_id]);
+    }
+
     // Archive ticket
     if (isset($_POST['archive_ticket']) && (is_admin() || (is_agent() && can_archive_tickets()))) {
         db_update('tickets', ['is_archived' => 1], 'id = ?', [$ticket_id]);

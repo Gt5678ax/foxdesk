@@ -198,7 +198,7 @@ if (is_admin() && file_exists(__DIR__ . '/update-check-functions.php')) {
                     <span><?php echo e(t('All tickets')); ?></span>
                 </a>
 
-                <?php $is_new_ticket = ($page ?? '') === 'new-ticket'; ?>
+                <?php $is_new_ticket = ($page ?? '') === 'new-ticket' && !isset($_GET['auto_timer']); ?>
                 <a href="<?php echo url('new-ticket'); ?>"
                     class="nav-item <?php echo $is_new_ticket ? 'active' : ''; ?>"
                     <?php echo $is_new_ticket ? 'aria-current="page"' : ''; ?>>

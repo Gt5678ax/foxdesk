@@ -204,6 +204,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            // In-app notifications
+            if (function_exists('dispatch_ticket_notifications')) {
+                $desc_preview = strip_tags($description);
+                $desc_preview = mb_strlen($desc_preview) > 80 ? mb_substr($desc_preview, 0, 77) . '...' : $desc_preview;
+                dispatch_ticket_notifications('new_ticket', $ticket_id, $user['id'], [
+                    'comment_preview' => $desc_preview,
+                ]);
+                if ($assignee_id) {
+                    dispatch_ticket_notifications('assigned_to_you', $ticket_id, $user['id'], [
+                        'assignee_id' => $assignee_id,
+                    ]);
+                }
+            }
+
             if (empty($upload_errors)) {
                 flash(t('Ticket created successfully.'), 'success');
             }
@@ -311,6 +325,21 @@ include BASE_PATH . '/includes/components/page-header.php';
                 <div id="file-preview" class="mt-1.5 space-y-1 hidden"></div>
             </div>
 
+            <!-- Company -->
+            <?php if (!empty($organizations)): ?>
+                <div>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Company')); ?></label>
+                    <select name="organization_id" class="form-select">
+                        <option value=""><?php echo e(t('-- No organization --')); ?></option>
+                        <?php foreach ($organizations as $org): ?>
+                            <option value="<?php echo (int) $org['id']; ?>" <?php echo $default_organization_id === (int) $org['id'] ? 'selected' : ''; ?>>
+                                <?php echo e($org['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+
             <!-- Advanced Settings (collapsible) -->
             <details class="group">
                 <summary class="flex items-center gap-2 cursor-pointer py-2 text-sm font-medium" style="color: var(--text-secondary);">
@@ -397,23 +426,9 @@ include BASE_PATH . '/includes/components/page-header.php';
                         </div>
                         <?php endif; ?>
 
-                        <!-- Company -->
-                        <?php if (!empty($organizations)): ?>
-                            <div>
-                                <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Company')); ?></label>
-                                <select name="organization_id" class="form-select">
-                                    <option value=""><?php echo e(t('-- No organization --')); ?></option>
-                                    <?php foreach ($organizations as $org): ?>
-                                        <option value="<?php echo (int) $org['id']; ?>" <?php echo $default_organization_id === (int) $org['id'] ? 'selected' : ''; ?>>
-                                            <?php echo e($org['name']); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        <?php endif; ?>
                     </div>
 
-                    <!-- Tags (separate from grid) -->
+                    <!-- Tags -->
                     <?php if ($tags_supported): ?>
                         <div>
                             <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Tags')); ?></label>
@@ -464,7 +479,7 @@ include BASE_PATH . '/includes/components/page-header.php';
                     <?php echo e(t('Cancel')); ?>
                 </a>
                 <button type="submit" class="btn btn-primary flex items-center">
-                    <?php echo e(t('Submit ticket')); ?>
+                    <?php echo e(t('Save')); ?>
                 </button>
             </div>
         </div>

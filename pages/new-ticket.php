@@ -325,6 +325,21 @@ include BASE_PATH . '/includes/components/page-header.php';
                 <div id="file-preview" class="mt-1.5 space-y-1 hidden"></div>
             </div>
 
+            <!-- Company -->
+            <?php if (!empty($organizations)): ?>
+                <div>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Company')); ?></label>
+                    <select name="organization_id" class="form-select">
+                        <option value=""><?php echo e(t('-- No organization --')); ?></option>
+                        <?php foreach ($organizations as $org): ?>
+                            <option value="<?php echo (int) $org['id']; ?>" <?php echo $default_organization_id === (int) $org['id'] ? 'selected' : ''; ?>>
+                                <?php echo e($org['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+
             <!-- Advanced Settings (collapsible) -->
             <details class="group">
                 <summary class="flex items-center gap-2 cursor-pointer py-2 text-sm font-medium" style="color: var(--text-secondary);">
@@ -332,7 +347,7 @@ include BASE_PATH . '/includes/components/page-header.php';
                     <?php echo e(t('Advanced')); ?>
                 </summary>
                 <div class="pt-2 space-y-4">
-                    <!-- Priority, Ticket Type, Due Date, Assign To, On Behalf Of, Company in one grid -->
+                    <!-- Priority, Ticket Type, Due Date, Assign To, On Behalf Of -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         <!-- Priority -->
                         <div>
@@ -411,23 +426,9 @@ include BASE_PATH . '/includes/components/page-header.php';
                         </div>
                         <?php endif; ?>
 
-                        <!-- Company -->
-                        <?php if (!empty($organizations)): ?>
-                            <div>
-                                <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Company')); ?></label>
-                                <select name="organization_id" class="form-select">
-                                    <option value=""><?php echo e(t('-- No organization --')); ?></option>
-                                    <?php foreach ($organizations as $org): ?>
-                                        <option value="<?php echo (int) $org['id']; ?>" <?php echo $default_organization_id === (int) $org['id'] ? 'selected' : ''; ?>>
-                                            <?php echo e($org['name']); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        <?php endif; ?>
                     </div>
 
-                    <!-- Tags (separate from grid) -->
+                    <!-- Tags -->
                     <?php if ($tags_supported): ?>
                         <div>
                             <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Tags')); ?></label>
@@ -478,7 +479,7 @@ include BASE_PATH . '/includes/components/page-header.php';
                     <?php echo e(t('Cancel')); ?>
                 </a>
                 <button type="submit" class="btn btn-primary flex items-center">
-                    <?php echo e(t('Submit ticket')); ?>
+                    <?php echo e(t('Save')); ?>
                 </button>
             </div>
         </div>

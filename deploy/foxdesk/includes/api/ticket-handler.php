@@ -64,6 +64,14 @@ function api_change_status() {
     require_once BASE_PATH . '/includes/mailer.php';
     send_status_change_notification($ticket, $old_status, $new_status);
 
+    // In-app notification for status change
+    if (function_exists('dispatch_ticket_notifications')) {
+        dispatch_ticket_notifications('status_changed', $ticket_id, $user['id'], [
+            'old_status' => $old_status['name'] ?? '',
+            'new_status' => $new_status['name'] ?? '',
+        ]);
+    }
+
     api_success(['status' => $new_status]);
 }
 
@@ -477,8 +485,7 @@ function api_edit_comment() {
     // Update the comment
     try {
         db_update('comments', [
-            'content' => $content,
-            'updated_at' => date('Y-m-d H:i:s')
+            'content' => $content
         ], 'id = ?', [$comment_id]);
 
         if (function_exists('log_ticket_history')) {
