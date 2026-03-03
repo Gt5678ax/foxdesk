@@ -6,6 +6,10 @@
         "Added WordPress-style background tasks (pseudo-cron) - email ingestion, recurring tasks and maintenance run automatically without server cron",
         "Added Remember me checkbox on login - stay logged in after browser restart (30-day secure cookie)",
         "URLs in tickets and comments are now automatically converted to clickable links",
+        "Fixed report localization - dates and month names now show in the correct language",
+        "Fixed encoding issue in report footer (corrupted characters)",
+        "Added missing translations for report fields (Total Amount, Hours Worked)",
+        "Dashboard time display is now smaller and less prominent",
         "Fixed comment edit losing rich-text formatting from Quill editor",
         "Fixed public share page not displaying rich-text formatting"
     ],
