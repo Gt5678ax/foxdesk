@@ -1,12 +1,13 @@
 {
-    "version": "0.3.57",
-    "date": "2026-03-02",
+    "version": "0.3.58",
+    "date": "2026-03-03",
     "min_php": "8.1",
     "changelog": [
-        "Fixed dashboard time display - shows human-readable format (1h 15min) instead of decimal hours (1.3h)",
-        "Removed Create another checkbox from new ticket form",
-        "Added manual time input (minutes) on new ticket form",
-        "Allow standalone time entries on ticket detail without requiring a comment"
+        "Added WordPress-style background tasks (pseudo-cron) - email ingestion, recurring tasks and maintenance run automatically without server cron",
+        "Added Remember me checkbox on login - stay logged in after browser restart (30-day secure cookie)",
+        "URLs in tickets and comments are now automatically converted to clickable links",
+        "Fixed comment edit losing rich-text formatting from Quill editor",
+        "Fixed public share page not displaying rich-text formatting"
     ],
     "delete_files": []
 }
