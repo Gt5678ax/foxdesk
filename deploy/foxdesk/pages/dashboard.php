@@ -332,9 +332,9 @@ require_once BASE_PATH . '/includes/header.php';
     }
 
     .db-time-value {
-        font-size: 0.9375rem;
-        font-weight: 700;
-        color: var(--text-primary);
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-secondary);
         width: 50px;
         flex-shrink: 0;
         text-align: right;
@@ -627,6 +627,71 @@ require_once BASE_PATH . '/includes/header.php';
         gap: 10px;
         padding: 10px 14px;
     }
+
+    /* ─── Notifications Widget Enhanced ─── */
+    .dbnotif-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        text-decoration: none;
+        transition: background 0.12s;
+        border-left: 3px solid transparent;
+        position: relative;
+    }
+    .dbnotif-card:hover { background: var(--primary-soft, rgba(59,130,246,0.04)); }
+    .dbnotif-card.unread {
+        border-left-color: var(--accent-primary, #3b82f6);
+        background: var(--primary-soft, rgba(59,130,246,0.04));
+    }
+    .dbnotif-avatar {
+        width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 600; color: #fff; overflow: hidden;
+    }
+    .dbnotif-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .dbnotif-content { flex: 1; min-width: 0; text-decoration: none; }
+    .dbnotif-text { font-size: 0.8125rem; line-height: 1.35; color: var(--text-primary); }
+    .dbnotif-card.unread .dbnotif-text { font-weight: 600; }
+    .dbnotif-snippet {
+        font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 360px;
+    }
+    .dbnotif-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+    .dbnotif-time { font-size: 0.6875rem; color: var(--text-muted); }
+    .dbnotif-action-badge {
+        display: inline-flex; align-items: center; font-size: 0.5625rem;
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+        padding: 1px 5px; border-radius: 99px; background: #fff7ed; color: #ea580c;
+    }
+    [data-theme="dark"] .dbnotif-action-badge { background: rgba(234,88,12,0.15); color: #fb923c; }
+    .dbnotif-actions {
+        flex-shrink: 0; display: flex; align-items: center; gap: 2px;
+        opacity: 0; transition: opacity 0.15s;
+    }
+    .dbnotif-card:hover .dbnotif-actions { opacity: 1; }
+    .dbnotif-btn {
+        padding: 3px; border-radius: 5px; color: var(--text-muted);
+        cursor: pointer; transition: color 0.12s, background 0.12s;
+        border: none; background: none; line-height: 0;
+    }
+    .dbnotif-btn:hover { color: var(--primary, #3b82f6); background: var(--primary-soft, rgba(59,130,246,0.08)); }
+    .dbnotif-filter-tabs {
+        display: flex; gap: 3px; padding: 2px; border-radius: 8px;
+        background: var(--surface-secondary, #f1f5f9); margin-bottom: 8px;
+    }
+    .dbnotif-filter-tab {
+        padding: 4px 10px; font-size: 0.6875rem; font-weight: 500; border-radius: 6px;
+        color: var(--text-secondary); text-decoration: none; transition: all 0.15s;
+        white-space: nowrap; cursor: pointer; border: none; background: none;
+    }
+    .dbnotif-filter-tab:hover { background: var(--surface-primary, #fff); color: var(--text-primary); }
+    .dbnotif-filter-tab.active {
+        background: var(--surface-primary, #fff); color: var(--primary, #3b82f6);
+        font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    @media (max-width: 640px) { .dbnotif-snippet { max-width: 200px; } }
 </style>
 
 <div class="flex items-center justify-between mb-3">
@@ -770,6 +835,155 @@ require_once BASE_PATH . '/includes/header.php';
                         ?>
                     </div>
                 </div>
+                <?php break;
+
+            // ••••••••••••••••••••••••••••••••••••••••••••••••••••••
+            // NOTIFICATIONS — Recent activity feed
+            // ••••••••••••••••••••••••••••••••••••••••••••••••••••••
+            case 'notifications': ?>
+                <?php $ww_id = 'notifications';
+                $ww_size = $w_size;
+                $ww_hidden = $is_section_hidden;
+                include BASE_PATH . '/includes/components/widget-wrap-open.php'; ?>
+                <div class="db-section-header">
+                    <h3 class="db-section-title flex items-center gap-2">
+                        <?php echo get_icon('bell', 'w-4 h-4'); ?>
+                        <?php echo e(t('Notifications')); ?>
+                        <?php if ($dashboard_unread_count > 0): ?>
+                            <span id="dbnotif-badge" class="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full"><?php echo $dashboard_unread_count; ?></span>
+                        <?php endif; ?>
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <?php if ($dashboard_unread_count > 0): ?>
+                            <button type="button" onclick="dbNotifMarkAllRead()" class="dbnotif-btn" title="<?php echo e(t('Mark all as read')); ?>" style="opacity:1;">
+                                <?php echo get_icon('check', 'w-4 h-4'); ?>
+                            </button>
+                        <?php endif; ?>
+                        <a href="<?php echo url('notifications'); ?>" class="db-section-link"><?php echo e(t('View all')); ?></a>
+                    </div>
+                </div>
+
+                <!-- Filter tabs -->
+                <div class="dbnotif-filter-tabs">
+                    <button type="button" class="dbnotif-filter-tab active" data-dbnotif-filter="all"><?php echo e(t('All')); ?></button>
+                    <button type="button" class="dbnotif-filter-tab" data-dbnotif-filter="action"><?php echo e(t('Action required')); ?></button>
+                    <button type="button" class="dbnotif-filter-tab" data-dbnotif-filter="info"><?php echo e(t('Informational')); ?></button>
+                </div>
+
+                <?php if (empty($dashboard_notifications)): ?>
+                    <div id="dbnotif-empty" class="flex flex-col items-center justify-center py-8 text-center">
+                        <?php echo get_icon('bell', 'w-8 h-8 mb-2 opacity-30'); ?>
+                        <p class="text-sm theme-text-muted"><?php echo e(t('No notifications yet')); ?></p>
+                        <p class="text-xs theme-text-muted mt-1"><?php echo e(t('Activity on your tickets will appear here')); ?></p>
+                    </div>
+                <?php else: ?>
+                    <div id="dbnotif-list">
+                    <?php
+                    $grouped_dashboard = group_notifications($dashboard_notifications);
+                    $group_labels = [
+                        'today' => t('Today'),
+                        'yesterday' => t('Yesterday'),
+                        'earlier' => t('Earlier'),
+                    ];
+                    foreach (['today', 'yesterday', 'earlier'] as $grp):
+                        if (empty($grouped_dashboard[$grp])) continue;
+                        ?>
+                        <div class="text-xs font-semibold uppercase tracking-wider mt-3 mb-1.5 px-1" style="color: var(--text-muted); letter-spacing: 0.05em;">
+                            <?php echo e($group_labels[$grp]); ?>
+                        </div>
+                        <div class="space-y-0.5">
+                            <?php foreach ($grouped_dashboard[$grp] as $notif):
+                                $n_is_read = (bool) $notif['is_read'];
+                                $n_text = format_notification_text($notif);
+                                $n_time = notification_time_ago($notif['created_at']);
+                                $n_ticket_id = $notif['ticket_id'] ? (int) $notif['ticket_id'] : null;
+                                $n_data = $notif['data'] ?? [];
+                                $n_comment_id = $n_data['comment_id'] ?? null;
+                                $n_snippet = get_notification_snippet($notif);
+                                $n_is_action = is_action_required_notification($notif['type'], $n_data);
+
+                                // Build deep link (ref=dashboard for back nav, nid for auto mark-read)
+                                $n_href = '#';
+                                if ($n_ticket_id) {
+                                    $n_href = 'index.php?page=ticket&id=' . $n_ticket_id . '&ref=dashboard&nid=' . (int)$notif['id'];
+                                    if ($n_comment_id) $n_href .= '#comment-' . $n_comment_id;
+                                }
+
+                                $n_actor_name = trim(($notif['actor_first_name'] ?? '') . ' ' . ($notif['actor_last_name'] ?? ''));
+                                $n_actor_avatar = $notif['actor_avatar'] ?? null;
+                                $n_initials = mb_strtoupper(mb_substr($notif['actor_first_name'] ?? '?', 0, 1));
+                                $avatar_bg = 'hsl(' . abs(crc32($n_actor_name)) % 360 . ', 55%, 60%)';
+
+                                // Type-specific icon + color
+                                $type_icon = 'bell';
+                                $type_color = '#6b7280';
+                                switch ($notif['type']) {
+                                    case 'new_ticket':       $type_icon = 'plus';                 $type_color = '#10b981'; break;
+                                    case 'new_comment':      $type_icon = 'comment';              $type_color = '#3b82f6'; break;
+                                    case 'status_changed':   $type_icon = 'refresh-cw';           $type_color = '#8b5cf6'; break;
+                                    case 'assigned_to_you':  $type_icon = 'user-plus';            $type_color = '#f59e0b'; break;
+                                    case 'priority_changed': $type_icon = 'exclamation-triangle';  $type_color = '#ef4444'; break;
+                                    case 'due_date_reminder': $type_icon = 'clock';               $type_color = '#ef4444'; break;
+                                }
+                                ?>
+                                <div class="dbnotif-card <?php echo $n_is_read ? '' : 'unread'; ?>"
+                                     id="dbnotif-<?php echo (int)$notif['id']; ?>"
+                                     data-id="<?php echo (int)$notif['id']; ?>"
+                                     data-action="<?php echo $n_is_action ? '1' : '0'; ?>">
+                                    <!-- Avatar -->
+                                    <a href="<?php echo $n_href; ?>" class="dbnotif-avatar" style="background: <?php echo $avatar_bg; ?>; text-decoration:none;">
+                                        <?php if ($n_actor_avatar && !str_starts_with($n_actor_avatar, 'data:')): ?>
+                                            <img src="<?php echo e(upload_url($n_actor_avatar)); ?>" alt=""
+                                                 onerror="this.style.display='none';this.parentElement.textContent='<?php echo e($n_initials); ?>'">
+                                        <?php elseif ($n_actor_avatar && str_starts_with($n_actor_avatar, 'data:')): ?>
+                                            <img src="<?php echo e($n_actor_avatar); ?>" alt="">
+                                        <?php else: ?>
+                                            <?php echo e($n_initials); ?>
+                                        <?php endif; ?>
+                                    </a>
+                                    <!-- Content -->
+                                    <a href="<?php echo $n_href; ?>" class="dbnotif-content">
+                                        <div class="dbnotif-text"><?php echo e($n_text); ?></div>
+                                        <?php if ($n_snippet): ?>
+                                            <div class="dbnotif-snippet"><?php echo e($n_snippet); ?></div>
+                                        <?php endif; ?>
+                                        <div class="dbnotif-meta">
+                                            <span class="inline-flex items-center" style="color: <?php echo e($type_color); ?>;">
+                                                <?php echo get_icon($type_icon, 'w-3 h-3'); ?>
+                                            </span>
+                                            <span class="dbnotif-time"><?php echo e($n_time); ?></span>
+                                            <?php if ($n_is_action): ?>
+                                                <span class="dbnotif-action-badge"><?php echo e(t('Action required')); ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </a>
+                                    <!-- Actions -->
+                                    <div class="dbnotif-actions">
+                                        <?php if (!$n_is_read): ?>
+                                            <button type="button" class="dbnotif-btn"
+                                                    onclick="event.stopPropagation();dbNotifMarkRead(<?php echo (int)$notif['id']; ?>)"
+                                                    title="<?php echo e(t('Mark as read')); ?>">
+                                                <?php echo get_icon('check', 'w-3.5 h-3.5'); ?>
+                                            </button>
+                                        <?php endif; ?>
+                                        <a href="<?php echo $n_href; ?>" class="dbnotif-btn"
+                                           title="<?php echo e(t('Open')); ?>">
+                                            <?php echo get_icon('chevron-right', 'w-3.5 h-3.5'); ?>
+                                        </a>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
+                    </div>
+                    <div class="text-center py-3 mt-2 border-t" style="border-color: var(--border-light);">
+                        <a href="<?php echo url('notifications'); ?>"
+                           class="text-xs font-semibold" style="color: var(--primary); text-decoration: none;">
+                            <?php echo e(t('View all notifications')); ?>
+                        </a>
+                    </div>
+                <?php endif; ?>
+                <?php include BASE_PATH . '/includes/components/widget-wrap-close.php'; ?>
                 <?php break;
 
             // ••••••••••••••••••••••••••••••••••••••••••••••••••••••
@@ -1547,6 +1761,78 @@ require_once BASE_PATH . '/includes/header.php';
             body: JSON.stringify({ layout: { order: order, hidden: hidden, sizes: sizes } })
         }).catch(function () { });
     }
+
+    /* ─── Dashboard Notifications — mark-read, mark-all, filter ─── */
+    window.dbNotifMarkRead = function(id) {
+        fetch('index.php?page=api&action=mark-notification-read', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'notification_id=' + id + '&csrf_token=' + encodeURIComponent(window.csrfToken)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (!res.success) return;
+            var el = document.getElementById('dbnotif-' + id);
+            if (el) {
+                el.classList.remove('unread');
+                var btn = el.querySelector('.dbnotif-btn[onclick]');
+                if (btn) btn.remove();
+            }
+            dbNotifUpdateBadge(-1);
+        });
+    };
+
+    window.dbNotifMarkAllRead = function() {
+        fetch('index.php?page=api&action=mark-all-notifications-read', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'csrf_token=' + encodeURIComponent(window.csrfToken)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (!res.success) return;
+            document.querySelectorAll('.dbnotif-card.unread').forEach(function(el) {
+                el.classList.remove('unread');
+            });
+            document.querySelectorAll('.dbnotif-btn[onclick]').forEach(function(btn) {
+                btn.remove();
+            });
+            dbNotifUpdateBadge(0);
+            if (typeof updateBadge === 'function') updateBadge(0);
+        });
+    };
+
+    function dbNotifUpdateBadge(delta) {
+        var badge = document.getElementById('dbnotif-badge');
+        if (!badge) return;
+        var c = parseInt(badge.textContent) || 0;
+        if (delta === 0) c = 0;
+        else c = Math.max(0, c + delta);
+        if (c <= 0) {
+            badge.style.display = 'none';
+        } else {
+            badge.textContent = c > 99 ? '99+' : c;
+            badge.style.display = '';
+        }
+    }
+
+    /* Filter tabs — client-side show/hide */
+    (function() {
+        var tabs = document.querySelectorAll('[data-dbnotif-filter]');
+        tabs.forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                var f = this.getAttribute('data-dbnotif-filter');
+                tabs.forEach(function(t) { t.classList.remove('active'); });
+                this.classList.add('active');
+                document.querySelectorAll('.dbnotif-card').forEach(function(card) {
+                    var isAction = card.getAttribute('data-action') === '1';
+                    if (f === 'all') { card.style.display = ''; }
+                    else if (f === 'action') { card.style.display = isAction ? '' : 'none'; }
+                    else { card.style.display = isAction ? 'none' : ''; }
+                });
+            });
+        });
+    })();
 </script>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; 

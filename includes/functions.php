@@ -501,6 +501,72 @@ function format_date($date, $format = 'd.m.Y H:i')
 }
 
 /**
+ * Get localized month names (short and full) for the current language.
+ */
+function get_localized_months()
+{
+    $lang = $_SESSION['lang'] ?? get_setting('default_language', 'en');
+
+    $months_full = [
+        'cs' => ['ledna','února','března','dubna','května','června','července','srpna','září','října','listopadu','prosince'],
+        'de' => ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+        'es' => ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'],
+        'it' => ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'],
+    ];
+    $months_short = [
+        'cs' => ['led','úno','bře','dub','kvě','čvn','čvc','srp','zář','říj','lis','pro'],
+        'de' => ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
+        'es' => ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],
+        'it' => ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'],
+    ];
+    $days_full = [
+        'cs' => ['neděle','pondělí','úterý','středa','čtvrtek','pátek','sobota'],
+        'de' => ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],
+        'es' => ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'],
+        'it' => ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'],
+    ];
+
+    return [
+        'full' => $months_full[$lang] ?? null,
+        'short' => $months_short[$lang] ?? null,
+        'days' => $days_full[$lang] ?? null,
+    ];
+}
+
+/**
+ * Format a date with localized month/day names.
+ * Supports: 'M j' (short month + day), 'l, F j, Y' (full day, full month day, year), 'd. F Y' (day. month year)
+ */
+function format_date_localized($date, $format = 'd. F Y')
+{
+    $ts = is_numeric($date) ? (int)$date : strtotime($date);
+    if (!$ts) return '';
+
+    $loc = get_localized_months();
+
+    $month_idx = (int)date('n', $ts) - 1; // 0-based
+    $day_idx = (int)date('w', $ts);        // 0=Sun
+
+    $result = date($format, $ts);
+
+    // Replace English month names with localized versions
+    if ($loc['full']) {
+        $en_months_full = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        $result = str_replace($en_months_full[$month_idx], $loc['full'][$month_idx], $result);
+    }
+    if ($loc['short']) {
+        $en_months_short = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        $result = str_replace($en_months_short[$month_idx], $loc['short'][$month_idx], $result);
+    }
+    if ($loc['days']) {
+        $en_days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        $result = str_replace($en_days[$day_idx], $loc['days'][$day_idx], $result);
+    }
+
+    return $result;
+}
+
+/**
  * Format duration in minutes
  */
 function format_duration_minutes($minutes)

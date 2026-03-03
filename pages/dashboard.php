@@ -332,9 +332,9 @@ require_once BASE_PATH . '/includes/header.php';
     }
 
     .db-time-value {
-        font-size: 0.9375rem;
-        font-weight: 700;
-        color: var(--text-primary);
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-secondary);
         width: 50px;
         flex-shrink: 0;
         text-align: right;

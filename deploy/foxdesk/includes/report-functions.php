@@ -358,7 +358,7 @@ function generate_report_chart_data($time_entries, $template) {
 
     foreach ($daily_totals as $date => $minutes) {
         $dt = new DateTime($date);
-        $labels[] = $dt->format('M j'); // "Jan 5"
+        $labels[] = format_date_localized($dt->format('Y-m-d'), 'M j');
         $data[] = round($minutes / 60, 2); // Convert to hours
     }
 
@@ -396,7 +396,7 @@ function group_report_entries($time_entries, $group_by, $template) {
             if (!isset($grouped[$key])) {
                 $grouped[$key] = [
                     'group_key' => $key,
-                    'group_label' => date('l, F j, Y', strtotime($key)),
+                    'group_label' => format_date_localized($key, 'l, j. F Y'),
                     'total_minutes' => 0,
                     'total_cost' => 0,
                     'entries' => []
