@@ -413,6 +413,7 @@ return [
     'Share link revoked.' => 'Share link revoked.',
     'Sign in' => 'Sign in',
     'Sign in to your account' => 'Sign in to your account',
+    'Remember me' => 'Remember me',
     'Sign out' => 'Sign out',
     'Start and end time are required.' => 'Start and end time are required.',
     'Start time' => 'Start time',
@@ -1068,6 +1069,17 @@ return [
     'Update package downloaded and validated. Please confirm to apply.' => 'Update package downloaded and validated. Please confirm to apply.',
     'Update check failed: {error}' => 'Update check failed: {error}',
     'Dismiss' => 'Dismiss',
+
+    // Pseudo-cron (background tasks)
+    'Background tasks' => 'Background tasks',
+    'Automatically run email ingestion, recurring tasks, and maintenance on page loads — no server cron required.' => 'Automatically run email ingestion, recurring tasks, and maintenance on page loads — no server cron required.',
+    'Enable background tasks' => 'Enable background tasks',
+    'Email ingestion' => 'Email ingestion',
+    'Maintenance' => 'Maintenance',
+    'every 5 min' => 'every 5 min',
+    'every 60 min' => 'every 60 min',
+    'every 24 hours' => 'every 24 hours',
+    'Tasks run in the background on page loads. No server cron job needed.' => 'Tasks run in the background on page loads. No server cron job needed.',
 
     // Help panel
     'Add comments at the bottom of any ticket. You can also attach files by dragging them into the comment box or using the attachment button.' => 'Add comments at the bottom of any ticket. You can also attach files by dragging them into the comment box or using the attachment button.',

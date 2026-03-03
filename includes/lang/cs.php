@@ -405,6 +405,7 @@ return [
     'Share link revoked.' => 'Sdílený odkaz zrušen.',
     'Sign in' => 'Přihlásit se',
     'Sign in to your account' => 'Přihlaste se do svého účtu',
+    'Remember me' => 'Zapamatovat si mě',
     'Sign out' => 'Odhlásit se',
     'Start and end time are required.' => 'Čas začátku a konce je povinný.',
     'Start time' => 'Čas začátku',
@@ -1068,6 +1069,17 @@ return [
     'Update package downloaded and validated. Please confirm to apply.' => 'Balíček stažen a ověřen. Potvrďte instalaci.',
     'Update check failed: {error}' => 'Kontrola aktualizací selhala: {error}',
     'Dismiss' => 'Zavřít',
+
+    // Pseudo-cron (background tasks)
+    'Background tasks' => 'Úlohy na pozadí',
+    'Automatically run email ingestion, recurring tasks, and maintenance on page loads — no server cron required.' => 'Automaticky spouští zpracování e-mailů, opakované úlohy a údržbu při načtení stránky — bez nutnosti nastavovat cron na serveru.',
+    'Enable background tasks' => 'Povolit úlohy na pozadí',
+    'Email ingestion' => 'Příjem e-mailů',
+    'Maintenance' => 'Údržba',
+    'every 5 min' => 'každých 5 min',
+    'every 60 min' => 'každých 60 min',
+    'every 24 hours' => 'každých 24 hodin',
+    'Tasks run in the background on page loads. No server cron job needed.' => 'Úlohy se spouští na pozadí při načtení stránky. Není potřeba cron na serveru.',
 
     // Help panel
     'Add comments at the bottom of any ticket. You can also attach files by dragging them into the comment box or using the attachment button.' => 'Přidávejte komentáře ve spodní části každého požadavku. Soubory můžete přiložit přetažením do pole komentáře nebo pomocí tlačítka pro přílohu.',

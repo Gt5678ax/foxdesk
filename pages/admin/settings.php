@@ -134,6 +134,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('admin', ['section' => 'settings', 'tab' => 'system']);
     }
 
+    // Save pseudo-cron setting
+    if (isset($_POST['save_pseudo_cron_settings'])) {
+        $enabled = !empty($_POST['pseudo_cron_enabled']) ? '1' : '0';
+        save_setting('pseudo_cron_enabled', $enabled);
+
+        // Generate secret token on first enable
+        if ($enabled === '1' && !get_setting('pseudo_cron_secret')) {
+            save_setting('pseudo_cron_secret', bin2hex(random_bytes(20)));
+        }
+
+        $settings_audit('pseudo_cron_settings_changed', ['enabled' => $enabled]);
+        flash(t('Settings saved.'), 'success');
+        redirect('admin', ['section' => 'settings', 'tab' => 'system']);
+    }
+
     // One-click remote install: download + validate + apply
     if (isset($_POST['install_remote_update'])) {
         $update_info = get_cached_update_info();
@@ -2050,6 +2065,55 @@ include BASE_PATH . '/includes/components/page-header.php';
                     <?php if (!$remote_update): ?>
                         — <span style="color: var(--success);"><?php echo e(t('You are running the latest version.')); ?></span>
                     <?php endif; ?>
+                </p>
+            <?php endif; ?>
+        </div>
+
+        <!-- Pseudo-cron (Background Tasks) -->
+        <div class="card card-body mt-2">
+            <h3 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted);">
+                <?php echo e(t('Background tasks')); ?>
+            </h3>
+            <p class="text-xs mb-2" style="color: var(--text-muted);">
+                <?php echo e(t('Automatically run email ingestion, recurring tasks, and maintenance on page loads — no server cron required.')); ?>
+            </p>
+
+            <div class="flex items-center justify-between gap-3 mb-2">
+                <form method="post" class="flex items-center gap-3 flex-1">
+                    <?php echo csrf_field(); ?>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="pseudo_cron_enabled" value="1"
+                            <?php echo get_setting('pseudo_cron_enabled') ? 'checked' : ''; ?>
+                            onchange="this.form.submit();" class="form-checkbox rounded"
+                            style="width: 16px; height: 16px;">
+                        <span class="text-xs" style="color: var(--text-secondary);">
+                            <?php echo e(t('Enable background tasks')); ?>
+                        </span>
+                    </label>
+                    <input type="hidden" name="save_pseudo_cron_settings" value="1">
+                </form>
+            </div>
+
+            <?php if (get_setting('pseudo_cron_enabled')): ?>
+                <div class="space-y-0 divide-y text-[11px]" style="border-color: var(--border-light); color: var(--text-muted);">
+                    <?php
+                    $cron_tasks = [
+                        ['key' => 'pseudo_cron_last_email',       'label' => t('Email ingestion'),  'interval' => t('every 5 min')],
+                        ['key' => 'pseudo_cron_last_recurring',   'label' => t('Recurring tasks'),  'interval' => t('every 60 min')],
+                        ['key' => 'pseudo_cron_last_maintenance', 'label' => t('Maintenance'),      'interval' => t('every 24 hours')],
+                    ];
+                    foreach ($cron_tasks as $ct):
+                        $last = get_setting($ct['key'], '');
+                        $last_fmt = $last ? date('Y-m-d H:i:s', (int) $last) : '—';
+                    ?>
+                        <div class="flex justify-between py-1">
+                            <span><?php echo e($ct['label']); ?> <span style="opacity:.6">(<?php echo e($ct['interval']); ?>)</span></span>
+                            <span><?php echo e($last_fmt); ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <p class="text-[11px] mt-2" style="color: var(--text-muted);">
+                    <?php echo e(t('Tasks run in the background on page loads. No server cron job needed.')); ?>
                 </p>
             <?php endif; ?>
         </div>

@@ -43,6 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (empty($email) || empty($password)) {
             $error = t('Enter email and password.');
         } elseif (login($email, $password)) {
+            if (!empty($_POST['remember_me'])) {
+                set_remember_token($_SESSION['user_id']);
+            }
             rate_limit_clear($rate_key);
             header('Location: index.php?page=dashboard');
             exit;
@@ -233,9 +236,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="flex items-center justify-between mt-4">
-                    <div class="flex items-center">
-                        <!-- Space for a remember me checkbox if needed -->
-                    </div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="remember_me" value="1"
+                            class="form-checkbox rounded" style="width: 16px; height: 16px;">
+                        <span class="text-sm" style="color: var(--text-secondary);"><?php echo e(t('Remember me')); ?></span>
+                    </label>
                     <a href="<?php echo url('forgot-password', ['lang' => $current_lang]); ?>"
                         class="text-sm font-medium transition-colors hover:text-[#3243bd]"
                         style="color: var(--primary);">

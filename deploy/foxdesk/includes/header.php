@@ -19,6 +19,12 @@ if (is_admin() && file_exists(__DIR__ . '/update-check-functions.php')) {
         $_foxdesk_update_info = get_cached_update_info();
     }
 }
+
+// Pseudo-cron: trigger background tasks on page load (WordPress-style)
+if (file_exists(__DIR__ . '/pseudo-cron.php')) {
+    require_once __DIR__ . '/pseudo-cron.php';
+    pseudo_cron_check();
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo e(get_app_language()); ?>">

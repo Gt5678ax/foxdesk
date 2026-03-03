@@ -104,13 +104,16 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 // Pages that don't require login
-$public_pages = ['login', 'logout', 'forgot-password', 'reset-password', 'ticket-share', 'report-share', 'report-public', 'api', 'health'];
+$public_pages = ['login', 'logout', 'forgot-password', 'reset-password', 'ticket-share', 'report-share', 'report-public', 'api', 'health', 'cron'];
 
 // Check authentication
 if (!in_array($page, $public_pages)) {
     if (!is_logged_in()) {
-        header('Location: index.php?page=login');
-        exit;
+        // Try auto-login from remember-me cookie
+        if (!validate_remember_token()) {
+            header('Location: index.php?page=login');
+            exit;
+        }
     }
 
     // Security: Ensure session user actually exists in DB
@@ -171,6 +174,12 @@ if ($page === 'health') {
     $health['php'] = PHP_VERSION;
     $health['timestamp'] = gmdate('Y-m-d\TH:i:s\Z');
     echo json_encode($health);
+    exit;
+}
+
+// Pseudo-cron endpoint (background task runner)
+if ($page === 'cron') {
+    require_once BASE_PATH . '/pages/cron.php';
     exit;
 }
 

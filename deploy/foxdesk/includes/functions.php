@@ -12,6 +12,7 @@ require_once BASE_PATH . '/includes/ticket-import-functions.php';
 require_once BASE_PATH . '/includes/email-functions.php';
 require_once BASE_PATH . '/includes/report-functions.php';
 require_once BASE_PATH . '/includes/recurring-task-functions.php';
+require_once BASE_PATH . '/includes/notification-functions.php';
 require_once BASE_PATH . '/includes/icons.php';
 require_once BASE_PATH . '/includes/components/date-input.php';
 
@@ -62,6 +63,45 @@ function safe_html($html)
 }
 
 /**
+ * Convert plain-text URLs in an HTML string into clickable <a> tags.
+ * Must be called AFTER e() or safe_html() — operates on safe HTML output.
+ * Skips URLs already inside <a> tags to avoid double-linking.
+ */
+function linkify_urls(string $html): string
+{
+    if ($html === '') return '';
+
+    // Split HTML into segments: inside <a>...</a> vs. everything else
+    // Odd-indexed parts are captured <a>...</a> blocks — pass through unchanged
+    $parts = preg_split('/(<a\s[^>]*>.*?<\/a>)/is', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+    $result = '';
+    foreach ($parts as $i => $part) {
+        if ($i % 2 === 1) {
+            $result .= $part;
+            continue;
+        }
+
+        // Linkify URLs in text outside <a> tags
+        $result .= preg_replace_callback(
+            '~
+                (?:https?://|www\.)           # Must start with http://, https://, or www.
+                [^\s<>\'"()\[\]]*             # URL body: no whitespace, HTML, quotes, brackets
+                [^\s<>\'"()\[\].,;:!?\-]      # Must end with a non-punctuation char
+            ~xi',
+            function ($m) {
+                $url = $m[0];
+                $href = preg_match('~^https?://~i', $url) ? $url : 'https://' . $url;
+                return '<a href="' . $href . '" target="_blank" rel="noopener noreferrer">' . $url . '</a>';
+            },
+            $part
+        );
+    }
+
+    return $result;
+}
+
+/**
  * Check if content appears to be HTML (from rich text editor)
  */
 function is_html_content($content)
@@ -78,11 +118,11 @@ function render_content($content)
     if (empty($content)) return '';
 
     if (is_html_content($content)) {
-        return safe_html($content);
+        return linkify_urls(safe_html($content));
     }
 
-    // Plain text - escape and convert newlines
-    return nl2br(e($content));
+    // Plain text - escape, convert newlines, then linkify
+    return linkify_urls(nl2br(e($content)));
 }
 
 /**

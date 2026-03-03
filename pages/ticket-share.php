@@ -110,7 +110,7 @@ $expires_label = !empty($share['expires_at']) ? format_date($share['expires_at']
 
             <?php if (!empty($ticket['description'])): ?>
                 <div class="mt-4 text-gray-700">
-                    <?php echo nl2br(e($ticket['description'])); ?>
+                    <?php echo render_content($ticket['description']); ?>
                 </div>
             <?php endif; ?>
 
@@ -183,7 +183,7 @@ $expires_label = !empty($share['expires_at']) ? format_date($share['expires_at']
                                             class="text-sm text-gray-500"><?php echo format_date($comment['created_at']); ?></span>
                                     </div>
                                     <div class="text-gray-700 break-words">
-                                        <?php echo nl2br(e($comment['content'])); ?>
+                                        <?php echo render_content($comment['content']); ?>
                                     </div>
 
                                     <?php if (!empty($comment_attachments)): ?>

@@ -502,7 +502,7 @@ function api_edit_comment() {
 
         api_success([
             'message' => t('Comment updated.'),
-            'content_html' => nl2br(e($content))
+            'content_html' => render_content($content)
         ]);
     } catch (Exception $e) {
         api_error(t('Failed to update comment.'), 500);

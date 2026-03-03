@@ -122,8 +122,142 @@ function login($email, $password)
  */
 function logout()
 {
+    $user_id = $_SESSION['user_id'] ?? null;
     $_SESSION = [];
     session_destroy();
+
+    // Clear remember-me token
+    if ($user_id) {
+        clear_remember_token($user_id);
+    }
+}
+
+// =============================================================================
+// REMEMBER-ME (PERSISTENT LOGIN)
+// =============================================================================
+
+/**
+ * Ensure the remember_token column exists on users table (auto-migration).
+ */
+function ensure_remember_token_column()
+{
+    static $checked = false;
+    if ($checked) return true;
+    $checked = true;
+
+    if (!column_exists('users', 'remember_token')) {
+        try {
+            db_query("ALTER TABLE users ADD COLUMN remember_token VARCHAR(64) DEFAULT NULL");
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Create a remember-me token for the user and set a 30-day cookie.
+ */
+function set_remember_token($user_id)
+{
+    if (!ensure_remember_token_column()) return;
+
+    $token = bin2hex(random_bytes(32)); // 64 hex chars
+    $hash = hash('sha256', $token);
+
+    db_update('users', ['remember_token' => $hash], 'id = ?', [$user_id]);
+
+    $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    setcookie('foxdesk_remember', $token, [
+        'expires'  => time() + (30 * 24 * 60 * 60), // 30 days
+        'path'     => '/',
+        'httponly'  => true,
+        'secure'   => $is_https,
+        'samesite' => 'Lax',
+    ]);
+}
+
+/**
+ * Validate the remember-me cookie and auto-login the user.
+ *
+ * @return bool True if the user was successfully auto-logged in.
+ */
+function validate_remember_token()
+{
+    if (empty($_COOKIE['foxdesk_remember'])) return false;
+    if (!ensure_remember_token_column()) return false;
+
+    $token = $_COOKIE['foxdesk_remember'];
+    if (strlen($token) !== 64) {
+        clear_remember_cookie();
+        return false;
+    }
+
+    $hash = hash('sha256', $token);
+
+    $sql = "SELECT * FROM users WHERE remember_token = ? AND is_active = 1";
+    if (users_deleted_at_column_exists()) {
+        $sql .= " AND deleted_at IS NULL";
+    }
+    $user = db_fetch_one($sql, [$hash]);
+
+    if (!$user) {
+        clear_remember_cookie();
+        return false;
+    }
+
+    // Auto-login: populate session
+    session_regenerate_id(true);
+    $_SESSION['user_id']    = $user['id'];
+    $_SESSION['user_email'] = $user['email'];
+    $_SESSION['user_name']  = $user['first_name'] . ' ' . $user['last_name'];
+    $_SESSION['user_role']  = $user['role'];
+
+    $allowed_langs = ['en', 'cs', 'de', 'it', 'es'];
+    $lang = strtolower(trim((string) ($user['language'] ?? '')));
+    if (!in_array($lang, $allowed_langs, true)) {
+        $lang = strtolower(trim((string) get_setting('app_language', 'en')));
+        if (!in_array($lang, $allowed_langs, true)) {
+            $lang = 'en';
+        }
+    }
+    $_SESSION['lang'] = $lang;
+    unset($_SESSION['lang_override']);
+
+    // Rotate token for extra security (token is single-use)
+    set_remember_token($user['id']);
+
+    return true;
+}
+
+/**
+ * Clear the remember-me token from DB for a specific user.
+ */
+function clear_remember_token($user_id)
+{
+    if (!ensure_remember_token_column()) return;
+    try {
+        db_update('users', ['remember_token' => null], 'id = ?', [$user_id]);
+    } catch (Throwable $e) {
+        // Non-critical
+    }
+    clear_remember_cookie();
+}
+
+/**
+ * Delete the remember-me cookie.
+ */
+function clear_remember_cookie()
+{
+    $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    setcookie('foxdesk_remember', '', [
+        'expires'  => time() - 3600,
+        'path'     => '/',
+        'httponly'  => true,
+        'secure'   => $is_https,
+        'samesite' => 'Lax',
+    ]);
+    unset($_COOKIE['foxdesk_remember']);
 }
 
 /**

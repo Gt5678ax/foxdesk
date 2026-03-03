@@ -398,6 +398,7 @@ return [
     'Share link revoked.' => 'Enlace compartido revocado.',
     'Sign in' => 'Iniciar sesión',
     'Sign in to your account' => 'Inicia sesión en tu cuenta',
+    'Remember me' => 'Recordarme',
     'Sign out' => 'Cerrar sesión',
     'Spanish' => 'Español',
     'Start and end time are required.' => 'La hora de inicio y fin son obligatorias.',
@@ -1069,6 +1070,17 @@ return [
     'Update package downloaded and validated. Please confirm to apply.' => 'Paquete descargado y validado. Confirme para instalar.',
     'Update check failed: {error}' => 'Error al comprobar actualizaciones: {error}',
     'Dismiss' => 'Descartar',
+
+    // Pseudo-cron (background tasks)
+    'Background tasks' => 'Tareas en segundo plano',
+    'Automatically run email ingestion, recurring tasks, and maintenance on page loads — no server cron required.' => 'Ejecuta automáticamente la recepción de correos, tareas recurrentes y mantenimiento al cargar páginas — sin necesidad de cron en el servidor.',
+    'Enable background tasks' => 'Habilitar tareas en segundo plano',
+    'Email ingestion' => 'Recepción de correos',
+    'Maintenance' => 'Mantenimiento',
+    'every 5 min' => 'cada 5 min',
+    'every 60 min' => 'cada 60 min',
+    'every 24 hours' => 'cada 24 horas',
+    'Tasks run in the background on page loads. No server cron job needed.' => 'Las tareas se ejecutan en segundo plano al cargar páginas. No se necesita cron en el servidor.',
 
     // Help panel
     'Add comments at the bottom of any ticket. You can also attach files by dragging them into the comment box or using the attachment button.' => 'Agregue comentarios en la parte inferior de cualquier ticket. También puede adjuntar archivos arrastrándolos al cuadro de comentarios o usando el botón de adjuntar.',
