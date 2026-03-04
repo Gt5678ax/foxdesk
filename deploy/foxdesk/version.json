@@ -1,10 +1,11 @@
 {
-    "version": "0.3.59",
+    "version": "0.3.60",
     "date": "2026-03-04",
     "min_php": "8.1",
     "changelog": [
         "Added Allowed Senders admin UI in Email settings - manage email allowlist directly from the web interface",
         "Quick Start now instantly creates a ticket with a running timer (each click creates a new ticket)",
+        "Added cancel button on sidebar active timers - hover to reveal, cancels and deletes the ticket entirely",
         "Replaced code icon with eye icon in the Logs tab for better visual clarity"
     ],
     "delete_files": []
