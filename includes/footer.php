@@ -22,6 +22,11 @@
         cancelTicketTooltip: <?php echo json_encode(t('Cancel ticket')); ?>
     };
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function() {});
+}
+</script>
 <!-- Image Preview Lightbox -->
 <div id="image-lightbox" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/70 backdrop-blur-sm"
      onclick="if(event.target===this)closeImagePreview();">

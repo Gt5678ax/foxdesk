@@ -82,6 +82,13 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
     $favicon_type = $custom_favicon ? 'image/x-icon' : 'image/svg+xml';
     ?>
     <link rel="icon" id="favicon" type="<?php echo $favicon_type; ?>" href="<?php echo $favicon_href; ?>">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.php">
+    <meta name="theme-color" content="<?php echo e($settings['primary_color'] ?? '#3b82f6'); ?>">
+    <link rel="apple-touch-icon" href="pwa-icon.php?s=180">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <!-- Active timer favicon (preloaded for JS swap) -->
     <link rel="preload" id="favicon-timer" as="image" type="image/svg+xml" href="data:image/svg+xml,<?php echo rawurlencode('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 32 32\'><rect width=\'32\' height=\'32\' rx=\'6\' fill=\'#22c55e\'/><circle cx=\'16\' cy=\'16\' r=\'10\' fill=\'none\' stroke=\'white\' stroke-width=\'2\'/><path d=\'M16 10 L16 16 L20 16\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\'/></svg>'); ?>">
 
