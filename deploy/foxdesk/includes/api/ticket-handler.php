@@ -143,6 +143,66 @@ function api_start_timer() {
 }
 
 /**
+ * Quick start — instantly create a ticket and start a timer
+ */
+function api_quick_start() {
+    require_admin_post();
+
+    $user = current_user();
+    if (!$user || (!is_agent() && !is_admin())) {
+        api_error('Unauthorized', 401);
+    }
+
+    if (!ticket_time_table_exists()) {
+        api_error(t('Time tracking is not available.'), 400);
+    }
+
+    require_once BASE_PATH . '/includes/ticket-crud-functions.php';
+
+    // Create ticket with minimal data
+    $ticket_id = create_ticket([
+        'title' => t('Quick ticket'),
+        'description' => '',
+        'user_id' => $user['id'],
+        'assignee_id' => $user['id'],
+    ]);
+
+    if (!$ticket_id) {
+        api_error('Failed to create ticket', 500);
+    }
+
+    $ticket = get_ticket($ticket_id);
+
+    // Start timer (same logic as api_start_timer)
+    $user_cost_rate = (float)($user['cost_rate'] ?? 0);
+    $org_billable_rate = 0.0;
+    if (!empty($ticket['organization_id'])) {
+        $org = get_organization($ticket['organization_id']);
+        $org_billable_rate = (float)($org['billable_rate'] ?? 0);
+    }
+
+    db_insert('ticket_time_entries', [
+        'ticket_id' => $ticket_id,
+        'user_id' => $user['id'],
+        'started_at' => date('Y-m-d H:i:s'),
+        'ended_at' => null,
+        'duration_minutes' => 0,
+        'is_billable' => 1,
+        'billable_rate' => $org_billable_rate,
+        'cost_rate' => $user_cost_rate,
+        'is_manual' => 0,
+        'created_at' => date('Y-m-d H:i:s')
+    ]);
+
+    log_activity($ticket_id, $user['id'], 'time_started', 'Timer started');
+
+    api_success([
+        'ticket_id' => $ticket_id,
+        'url' => ticket_url($ticket),
+    ]);
+}
+
+/**
  * Pause timer for a ticket (AJAX)
  */
 function api_pause_timer() {

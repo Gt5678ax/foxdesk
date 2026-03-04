@@ -1126,6 +1126,21 @@ return [
     'View logged time reports under Reports > Time Tracking. Filter by agent, date range, or ticket to analyze time spent.' => 'Vea los informes de tiempo registrado en Informes > Seguimiento de tiempo. Filtre por agente, rango de fechas o ticket para analizar el tiempo dedicado.',
     'Viewing and filtering' => 'Visualización y filtrado',
     'Your Profile' => 'Su perfil',
+
+    // Allowed senders
+    'Allowed Senders' => 'Remitentes permitidos',
+    'Add Sender' => 'Añadir remitente',
+    'Email or Domain' => 'Email o dominio',
+    'Assign to user' => 'Asignar a usuario',
+    'Domain' => 'Dominio',
+    'Sender added' => 'Remitente añadido',
+    'Sender deleted' => 'Remitente eliminado',
+    'When "Allow unknown senders" is disabled, only emails from addresses or domains in this list will be accepted.' => 'Cuando "Permitir remitentes desconocidos" está desactivado, solo se aceptarán correos de direcciones o dominios en esta lista.',
+    'Enable' => 'Activar',
+    'Disable' => 'Desactivar',
+    'No entries' => 'Sin entradas',
+    'Are you sure?' => '¿Está seguro?',
+    'Quick ticket' => 'Ticket rápido',
 ];
 
 

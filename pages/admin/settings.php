@@ -838,6 +838,19 @@ if ($tab === 'email') {
     } catch (Throwable $e) {
         $incoming_mail_log_error = $e->getMessage();
     }
+
+    // Load allowed senders for the allowlist UI
+    try {
+        $allowed_senders = db_fetch_all(
+            "SELECT s.*, CONCAT(u.first_name, ' ', u.last_name) AS user_name
+             FROM allowed_senders s
+             LEFT JOIN users u ON s.user_id = u.id
+             ORDER BY s.type, s.value"
+        );
+    } catch (Throwable $e) {
+        $allowed_senders = [];
+    }
+    $all_users = db_fetch_all("SELECT id, first_name, last_name, email FROM users WHERE is_active = 1 ORDER BY first_name, last_name");
 }
 
 // Get template language
@@ -1377,6 +1390,96 @@ include BASE_PATH . '/includes/components/page-header.php';
                         <p class="text-xs" style="color: var(--text-muted);">
                             <?php echo e(t('Cron command: php bin/ingest-emails.php')); ?>
                         </p>
+                    </div>
+                </div>
+
+                <!-- Allowed Senders -->
+                <div class="card card-body mb-2">
+                    <h3 class="font-semibold mb-2" style="color: var(--text-primary);">
+                        <?php echo e(t('Allowed Senders')); ?>
+                    </h3>
+                    <p class="text-xs mb-4" style="color: var(--text-muted);">
+                        <?php echo e(t('When "Allow unknown senders" is disabled, only emails from addresses or domains in this list will be accepted.')); ?>
+                    </p>
+
+                    <!-- Add sender form -->
+                    <div class="flex flex-wrap gap-2 mb-4 items-end">
+                        <div>
+                            <label class="block text-xs mb-1" style="color: var(--text-secondary);"><?php echo e(t('Type')); ?></label>
+                            <select id="as-type" class="input-field text-sm" style="width: auto; min-width: 120px;">
+                                <option value="email">Email</option>
+                                <option value="domain"><?php echo e(t('Domain')); ?></option>
+                            </select>
+                        </div>
+                        <div class="flex-1" style="min-width: 200px;">
+                            <label class="block text-xs mb-1" style="color: var(--text-secondary);"><?php echo e(t('Email or Domain')); ?></label>
+                            <input type="text" id="as-value" class="input-field text-sm" placeholder="user@example.com">
+                        </div>
+                        <div>
+                            <label class="block text-xs mb-1" style="color: var(--text-secondary);"><?php echo e(t('Assign to user')); ?></label>
+                            <select id="as-user" class="input-field text-sm" style="width: auto; min-width: 150px;">
+                                <option value="">&mdash;</option>
+                                <?php foreach ($all_users as $u): ?>
+                                    <option value="<?php echo (int)$u['id']; ?>"><?php echo e($u['first_name'] . ' ' . $u['last_name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <button type="button" onclick="addAllowedSender()" class="btn btn-primary text-sm">
+                            <?php echo e(t('Add Sender')); ?>
+                        </button>
+                    </div>
+
+                    <!-- Senders table -->
+                    <div class="overflow-x-auto border rounded-lg" style="border-color: var(--border-color);">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr style="background: var(--surface-secondary);">
+                                    <th class="px-4 py-2 text-left text-xs font-medium" style="color: var(--text-muted);"><?php echo e(t('Type')); ?></th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium" style="color: var(--text-muted);"><?php echo e(t('Value')); ?></th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium" style="color: var(--text-muted);"><?php echo e(t('Assign to user')); ?></th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium" style="color: var(--text-muted);"><?php echo e(t('Status')); ?></th>
+                                    <th class="px-4 py-2 text-right text-xs font-medium" style="color: var(--text-muted);"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="allowed-senders-tbody">
+                                <?php if (empty($allowed_senders)): ?>
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-3 text-center text-xs" style="color: var(--text-muted);">
+                                            <?php echo e(t('No entries')); ?>
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($allowed_senders as $sender): ?>
+                                        <tr class="border-t" style="border-color: var(--border-color);" id="as-row-<?php echo (int)$sender['id']; ?>">
+                                            <td class="px-4 py-2" style="color: var(--text-secondary);">
+                                                <?php echo $sender['type'] === 'email' ? 'Email' : e(t('Domain')); ?>
+                                            </td>
+                                            <td class="px-4 py-2 font-mono text-xs" style="color: var(--text-primary);">
+                                                <?php echo e($sender['value']); ?>
+                                            </td>
+                                            <td class="px-4 py-2" style="color: var(--text-secondary);">
+                                                <?php echo $sender['user_name'] ? e($sender['user_name']) : '&mdash;'; ?>
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <?php if ($sender['active']): ?>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><?php echo e(t('Active')); ?></span>
+                                                <?php else: ?>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><?php echo e(t('Inactive')); ?></span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="px-4 py-2 text-right">
+                                                <button type="button" onclick="toggleAllowedSender(<?php echo (int)$sender['id']; ?>)" class="text-xs hover:underline mr-2" style="color: var(--text-muted);">
+                                                    <?php echo $sender['active'] ? e(t('Disable')) : e(t('Enable')); ?>
+                                                </button>
+                                                <button type="button" onclick="deleteAllowedSender(<?php echo (int)$sender['id']; ?>)" class="text-xs text-red-600 hover:underline">
+                                                    <?php echo e(t('Delete')); ?>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -2872,7 +2975,7 @@ include BASE_PATH . '/includes/components/page-header.php';
                                             <?php if (!empty($log['context']) && $log['context'] !== '[]'): ?>
                                                 <button onclick="showLogContext(this)" data-context="<?php echo e($log['context']); ?>"
                                                     class="text-blue-600 hover:text-blue-800">
-                                                    <?php echo get_icon('code'); ?>
+                                                    <?php echo get_icon('eye'); ?>
                                                 </button>
                                             <?php endif; ?>
                                         </td>
@@ -2980,7 +3083,7 @@ include BASE_PATH . '/includes/components/page-header.php';
                                                     <button onclick="showLogContext(this)"
                                                         data-context="<?php echo e($security_log['context']); ?>"
                                                         class="text-blue-600 hover:text-blue-800">
-                                                        <?php echo get_icon('code'); ?>
+                                                        <?php echo get_icon('eye'); ?>
                                                     </button>
                                                 <?php endif; ?>
                                             </td>
@@ -3058,6 +3161,70 @@ include BASE_PATH . '/includes/components/page-header.php';
 
     <?php endif; ?>
 </div>
+
+<?php if ($tab === 'email'): ?>
+    <script>
+        function addAllowedSender() {
+            const type = document.getElementById('as-type').value;
+            const value = document.getElementById('as-value').value.trim();
+            const userId = document.getElementById('as-user').value;
+
+            if (!value) return;
+
+            fetch('index.php?page=api&action=allowed-senders-add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': window.csrfToken},
+                body: JSON.stringify({type, value, user_id: userId || null})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success === false) {
+                    alert(data.error || 'Error');
+                    return;
+                }
+                location.reload();
+            })
+            .catch(() => alert('Error'));
+        }
+
+        function deleteAllowedSender(id) {
+            if (!confirm('<?php echo e(t('Are you sure?')); ?>')) return;
+
+            fetch('index.php?page=api&action=allowed-senders-delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': window.csrfToken},
+                body: JSON.stringify({id})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success === false) {
+                    alert(data.error || 'Error');
+                    return;
+                }
+                const row = document.getElementById('as-row-' + id);
+                if (row) row.remove();
+            })
+            .catch(() => alert('Error'));
+        }
+
+        function toggleAllowedSender(id) {
+            fetch('index.php?page=api&action=allowed-senders-toggle', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': window.csrfToken},
+                body: JSON.stringify({id})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success === false) {
+                    alert(data.error || 'Error');
+                    return;
+                }
+                location.reload();
+            })
+            .catch(() => alert('Error'));
+        }
+    </script>
+<?php endif; ?>
 
 <?php if ($tab === 'logs'): ?>
     <script>

@@ -16,6 +16,8 @@ require_once __DIR__ . '/user-handler.php';
 require_once __DIR__ . '/smtp-handler.php';
 require_once __DIR__ . '/agent-handler.php';
 require_once __DIR__ . '/update-api.php';
+require_once __DIR__ . '/notification-handler.php';
+require_once __DIR__ . '/allowed-senders-handler.php';
 
 /**
  * Route API requests to appropriate handlers
@@ -60,6 +62,7 @@ function route_api_request($action) {
 
         // Ticket handlers
         'change-status' => 'api_change_status',
+        'quick-start' => 'api_quick_start',
         'start-timer' => 'api_start_timer',
         'pause-timer' => 'api_pause_timer',
         'resume-timer' => 'api_resume_timer',
@@ -104,10 +107,22 @@ function route_api_request($action) {
         'agent-update-status' => 'api_agent_update_status',
         'agent-log-time' => 'api_agent_log_time',
 
+        // --- Notification endpoints ---
+        'get-notifications' => 'api_get_notifications',
+        'get-notification-count' => 'api_get_notification_count',
+        'mark-notification-read' => 'api_mark_notification_read',
+        'mark-all-notifications-read' => 'api_mark_all_notifications_read',
+
         // --- Update check endpoints (admin only) ---
         'check-for-updates' => 'api_check_for_updates',
         'download-remote-update' => 'api_download_remote_update',
         'dismiss-update-notice' => 'api_dismiss_update_notice',
+
+        // --- Allowed senders (admin only) ---
+        'allowed-senders-list' => 'api_allowed_senders_list',
+        'allowed-senders-add' => 'api_allowed_senders_add',
+        'allowed-senders-delete' => 'api_allowed_senders_delete',
+        'allowed-senders-toggle' => 'api_allowed_senders_toggle',
     ];
 
     if (isset($routes[$action])) {

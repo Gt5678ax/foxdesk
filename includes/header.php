@@ -59,6 +59,19 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
             inAppEnabled: <?php echo $in_app_notifications_enabled ? 'true' : 'false'; ?>,
             soundEnabled: <?php echo $in_app_sound_enabled ? 'true' : 'false'; ?>
         };
+        function quickStart(e) {
+            e.preventDefault();
+            fetch('index.php?page=api&action=quick-start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': window.csrfToken}
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.url) window.location.href = data.url;
+                else if (data.error) alert(data.error);
+            })
+            .catch(function() { alert('Error'); });
+        }
     </script>
 
     <!-- Favicon -->
@@ -213,10 +226,7 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
                 </a>
 
                 <?php if ((is_admin() || is_agent()) && function_exists('ticket_time_table_exists') && ticket_time_table_exists()): ?>
-                    <?php $is_quick_start = isset($_GET['auto_timer']); ?>
-                    <a href="<?php echo url('new-ticket', ['auto_timer' => '1']); ?>"
-                        class="nav-item <?php echo $is_quick_start ? 'active' : ''; ?>"
-                        <?php echo $is_quick_start ? 'aria-current="page"' : ''; ?>>
+                    <a href="#" onclick="quickStart(event)" class="nav-item">
                         <?php echo get_icon('play', 'nav-item__icon'); ?>
                         <span><?php echo e(t('Quick start')); ?></span>
                     </a>

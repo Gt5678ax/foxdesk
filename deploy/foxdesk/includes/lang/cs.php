@@ -1125,6 +1125,21 @@ return [
     'View logged time reports under Reports > Time Tracking. Filter by agent, date range, or ticket to analyze time spent.' => 'Zobrazte reporty zaznamenaného času v Reporty > Sledování času. Filtrujte podle agenta, období nebo požadavku pro analýzu stráveného času.',
     'Viewing and filtering' => 'Zobrazení a filtrování',
     'Your Profile' => 'Váš profil',
+
+    // Allowed senders
+    'Allowed Senders' => 'Povolení odesílatelé',
+    'Add Sender' => 'Přidat odesílatele',
+    'Email or Domain' => 'E-mail nebo doména',
+    'Assign to user' => 'Přiřadit uživateli',
+    'Domain' => 'Doména',
+    'Sender added' => 'Odesílatel přidán',
+    'Sender deleted' => 'Odesílatel smazán',
+    'When "Allow unknown senders" is disabled, only emails from addresses or domains in this list will be accepted.' => 'Pokud je vypnuto „Povolit neznámé odesílatele", budou přijaty pouze emaily od adres nebo domén v tomto seznamu.',
+    'Enable' => 'Povolit',
+    'Disable' => 'Zakázat',
+    'No entries' => 'Žádné záznamy',
+    'Are you sure?' => 'Opravdu?',
+    'Quick ticket' => 'Rychlý tiket',
 ];
 
 

@@ -1125,6 +1125,21 @@ return [
     'View logged time reports under Reports > Time Tracking. Filter by agent, date range, or ticket to analyze time spent.' => 'View logged time reports under Reports > Time Tracking. Filter by agent, date range, or ticket to analyze time spent.',
     'Viewing and filtering' => 'Viewing and filtering',
     'Your Profile' => 'Your Profile',
+
+    // Allowed senders
+    'Allowed Senders' => 'Allowed Senders',
+    'Add Sender' => 'Add Sender',
+    'Email or Domain' => 'Email or Domain',
+    'Assign to user' => 'Assign to user',
+    'Domain' => 'Domain',
+    'Sender added' => 'Sender added',
+    'Sender deleted' => 'Sender deleted',
+    'When "Allow unknown senders" is disabled, only emails from addresses or domains in this list will be accepted.' => 'When "Allow unknown senders" is disabled, only emails from addresses or domains in this list will be accepted.',
+    'Enable' => 'Enable',
+    'Disable' => 'Disable',
+    'No entries' => 'No entries',
+    'Are you sure?' => 'Are you sure?',
+    'Quick ticket' => 'Quick ticket',
 ];
 
 
