@@ -450,11 +450,40 @@ function hideInlineLoading(container) {
         return 'index.php?page=ticket&id=' + t.ticket_id;
     }
 
+    function cancelTicket(ticketId) {
+        if (!confirm(cfg.cancelTicketConfirm || 'Cancel ticket? The ticket will be deleted.')) return;
+        var apiUrl = (cfg.apiUrl || 'index.php?page=api') + '&action=cancel-ticket';
+        var body = new FormData();
+        body.append('ticket_id', ticketId);
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {'X-CSRF-TOKEN': window.csrfToken},
+            body: body
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                document.dispatchEvent(new Event('timerStateChanged'));
+                // If currently viewing this ticket, redirect to dashboard
+                if (window.location.href.indexOf('id=' + ticketId) !== -1 ||
+                    window.location.href.indexOf('ticket_id=' + ticketId) !== -1) {
+                    window.location.href = 'index.php?page=dashboard';
+                }
+            } else {
+                alert(data.error || 'Error');
+            }
+        })
+        .catch(function() { alert('Error'); });
+    }
+
     function buildTimerRow(t, pausedLabel) {
         var isPaused = t.is_paused;
+        var wrapper = document.createElement('div');
+        wrapper.className = 'flex items-center group';
+
         var a = document.createElement('a');
         a.href = buildTimerUrl(t);
-        a.className = 'sidebar-timer-item flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all sidebar-hover';
+        a.className = 'sidebar-timer-item flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all sidebar-hover min-w-0';
         a.title = t.ticket_title || '';
 
         var dot = document.createElement('span');
@@ -477,7 +506,24 @@ function hideInlineLoading(container) {
         time.textContent = isPaused ? pausedLabel : (t.elapsed_str || '0 min');
         a.appendChild(time);
 
-        return a;
+        wrapper.appendChild(a);
+
+        // Cancel button (✕)
+        var btn = document.createElement('button');
+        btn.className = 'flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity';
+        btn.style.color = 'var(--text-muted)';
+        btn.title = cfg.cancelTicketTooltip || 'Cancel ticket';
+        btn.textContent = '\u00D7';
+        btn.addEventListener('mouseenter', function() { btn.style.color = 'var(--corp-danger, #ef4444)'; });
+        btn.addEventListener('mouseleave', function() { btn.style.color = 'var(--text-muted)'; });
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            cancelTicket(t.ticket_id);
+        });
+        wrapper.appendChild(btn);
+
+        return wrapper;
     }
 
     function renderSidebarTimers(timers) {

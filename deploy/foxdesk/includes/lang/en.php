@@ -1140,6 +1140,10 @@ return [
     'No entries' => 'No entries',
     'Are you sure?' => 'Are you sure?',
     'Quick ticket' => 'Quick ticket',
+    'Cancel ticket' => 'Cancel ticket',
+    'Cancel ticket? The ticket will be deleted.' => 'Cancel ticket? The ticket will be deleted.',
+    'Ticket cancelled.' => 'Ticket cancelled.',
+    'Cannot cancel ticket with existing comments or time entries.' => 'Cannot cancel ticket with existing comments or time entries.',
 ];
 
 

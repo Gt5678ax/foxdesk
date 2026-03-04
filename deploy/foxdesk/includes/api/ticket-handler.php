@@ -314,6 +314,60 @@ function api_discard_timer() {
 }
 
 /**
+ * Cancel (delete) a ticket with running timer — for quick-start tickets.
+ * Only allowed if ticket has no comments and no completed time entries.
+ */
+function api_cancel_ticket() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        api_error('Method not allowed', 405);
+    }
+
+    require_csrf_token(true);
+
+    $user = current_user();
+    if (!$user || (!is_agent() && !is_admin())) {
+        api_error('Unauthorized', 401);
+    }
+
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $ticket = get_ticket($ticket_id);
+
+    if (!$ticket) {
+        api_error('Ticket not found', 404);
+    }
+
+    if (!can_see_ticket($ticket, $user)) {
+        api_error('Forbidden', 403);
+    }
+
+    // Safety: only allow cancellation if ticket has no comments and no completed time entries
+    $comment_count = (int)db_fetch_one("SELECT COUNT(*) AS cnt FROM comments WHERE ticket_id = ?", [$ticket_id])['cnt'];
+    if ($comment_count > 0) {
+        api_error(t('Cannot cancel ticket with existing comments or time entries.'), 400);
+    }
+
+    if (ticket_time_table_exists()) {
+        $completed_entries = (int)db_fetch_one(
+            "SELECT COUNT(*) AS cnt FROM ticket_time_entries WHERE ticket_id = ? AND ended_at IS NOT NULL",
+            [$ticket_id]
+        )['cnt'];
+        if ($completed_entries > 0) {
+            api_error(t('Cannot cancel ticket with existing comments or time entries.'), 400);
+        }
+    }
+
+    // Discard active timer if any
+    require_once BASE_PATH . '/includes/ticket-time-functions.php';
+    discard_ticket_timer($ticket_id, $user['id']);
+
+    // Delete the ticket entirely
+    require_once BASE_PATH . '/includes/ticket-crud-functions.php';
+    delete_ticket($ticket_id);
+
+    api_success(['message' => t('Ticket cancelled.')]);
+}
+
+/**
  * Delete time entry (AJAX)
  */
 function api_delete_time_entry() {

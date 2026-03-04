@@ -17,7 +17,9 @@
         isStaff: <?php echo (is_agent() || is_admin()) ? 'true' : 'false'; ?>,
         isAdmin: <?php echo is_admin() ? 'true' : 'false'; ?>,
         pausedLabel: <?php echo json_encode(t('Paused')); ?>,
-        activeTimersLabel: <?php echo json_encode(t('Active Timers')); ?>
+        activeTimersLabel: <?php echo json_encode(t('Active Timers')); ?>,
+        cancelTicketConfirm: <?php echo json_encode(t('Cancel ticket? The ticket will be deleted.')); ?>,
+        cancelTicketTooltip: <?php echo json_encode(t('Cancel ticket')); ?>
     };
 </script>
 <!-- Image Preview Lightbox -->

@@ -256,21 +256,27 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
                                 ? url('ticket', ['t' => $stimer['ticket_hash']])
                                 : url('ticket', ['id' => $stimer['ticket_id']]);
                         ?>
-                        <a href="<?php echo $st_url; ?>"
-                           class="sidebar-timer-item flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all sidebar-hover"
-                           title="<?php echo e($stimer['ticket_title']); ?>">
-                            <span class="flex-shrink-0 w-1.5 h-1.5 rounded-full <?php echo $st_paused ? 'bg-yellow-400' : 'sidebar-timer-pulse'; ?>"></span>
-                            <span class="flex-1 min-w-0 text-xs truncate" style="color: var(--text-secondary);">
-                                <?php echo e($stimer['ticket_title']); ?>
-                            </span>
-                            <span class="flex-shrink-0 text-[10px] font-mono font-medium <?php echo $st_paused ? '' : 'timer-display'; ?>"
-                                  style="color: <?php echo $st_paused ? 'var(--corp-warning, #f59e0b)' : 'var(--corp-success, #10b981)'; ?>;"
-                                  <?php if (!$st_paused): ?>
-                                  data-started="<?php echo strtotime($stimer['started_at']); ?>"
-                                  data-paused-seconds="<?php echo (int)($stimer['paused_seconds'] ?? 0); ?>"
-                                  <?php endif; ?>
-                            ><?php echo $st_paused ? e(t('Paused')) : e(format_duration_minutes($st_minutes)); ?></span>
-                        </a>
+                        <div class="flex items-center group">
+                            <a href="<?php echo $st_url; ?>"
+                               class="sidebar-timer-item flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all sidebar-hover min-w-0"
+                               title="<?php echo e($stimer['ticket_title']); ?>">
+                                <span class="flex-shrink-0 w-1.5 h-1.5 rounded-full <?php echo $st_paused ? 'bg-yellow-400' : 'sidebar-timer-pulse'; ?>"></span>
+                                <span class="flex-1 min-w-0 text-xs truncate" style="color: var(--text-secondary);">
+                                    <?php echo e($stimer['ticket_title']); ?>
+                                </span>
+                                <span class="flex-shrink-0 text-[10px] font-mono font-medium <?php echo $st_paused ? '' : 'timer-display'; ?>"
+                                      style="color: <?php echo $st_paused ? 'var(--corp-warning, #f59e0b)' : 'var(--corp-success, #10b981)'; ?>;"
+                                      <?php if (!$st_paused): ?>
+                                      data-started="<?php echo strtotime($stimer['started_at']); ?>"
+                                      data-paused-seconds="<?php echo (int)($stimer['paused_seconds'] ?? 0); ?>"
+                                      <?php endif; ?>
+                                ><?php echo $st_paused ? e(t('Paused')) : e(format_duration_minutes($st_minutes)); ?></span>
+                            </a>
+                            <button onclick="event.stopPropagation(); if(typeof cancelTicket==='function') cancelTicket(<?php echo (int)$stimer['ticket_id']; ?>); else if(confirm('<?php echo e(t('Cancel ticket? The ticket will be deleted.')); ?>')) fetch('index.php?page=api&action=cancel-ticket',{method:'POST',headers:{'X-CSRF-TOKEN':window.csrfToken,'Content-Type':'application/x-www-form-urlencoded'},body:'ticket_id=<?php echo (int)$stimer['ticket_id']; ?>'}).then(function(r){return r.json()}).then(function(d){if(d.success)location.reload();else alert(d.error||'Error')});"
+                                    class="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                                    style="color: var(--text-muted);"
+                                    title="<?php echo e(t('Cancel ticket')); ?>">&times;</button>
+                        </div>
                         <?php endforeach; ?>
                     </div>
                 </div>

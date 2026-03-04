@@ -1141,6 +1141,10 @@ return [
     'No entries' => 'Nessuna voce',
     'Are you sure?' => 'Sei sicuro?',
     'Quick ticket' => 'Ticket rapido',
+    'Cancel ticket' => 'Annulla ticket',
+    'Cancel ticket? The ticket will be deleted.' => 'Annullare il ticket? Il ticket verrà eliminato.',
+    'Ticket cancelled.' => 'Ticket annullato.',
+    'Cannot cancel ticket with existing comments or time entries.' => 'Impossibile annullare un ticket con commenti o registrazioni di tempo esistenti.',
 ];
 
 
