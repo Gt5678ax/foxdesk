@@ -367,6 +367,240 @@ function api_cancel_ticket() {
     api_success(['message' => t('Ticket cancelled.')]);
 }
 
+// ===================================================================
+// AJAX Quick-Edit Endpoints (used by ticket-detail sidebar)
+// ===================================================================
+
+/**
+ * Quick-edit: Assign agent (AJAX, no page reload)
+ */
+function api_quick_assign() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') { api_error('Method not allowed', 405); }
+    require_csrf_token(true);
+    $user = current_user();
+    if (!$user || (!is_agent() && !is_admin())) { api_error('Unauthorized', 401); }
+
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $ticket = get_ticket($ticket_id);
+    if (!$ticket) { api_error('Ticket not found', 404); }
+    if (!can_see_ticket($ticket, $user)) { api_error('Forbidden', 403); }
+
+    $old_assignee_id = $ticket['assignee_id'] ?? null;
+    $assignee_id = !empty($_POST['assignee_id']) ? (int)$_POST['assignee_id'] : null;
+
+    db_update('tickets', ['assignee_id' => $assignee_id], 'id = ?', [$ticket_id]);
+    if (function_exists('log_ticket_history')) {
+        log_ticket_history($ticket_id, $user['id'], 'assignee_id', $old_assignee_id, $assignee_id);
+    }
+
+    if ($assignee_id) {
+        $assigned_user = get_user($assignee_id);
+        log_activity($ticket_id, $user['id'], 'assigned', "Ticket assigned to {$assigned_user['first_name']} {$assigned_user['last_name']}");
+
+        require_once BASE_PATH . '/includes/mailer.php';
+        send_ticket_assignment_notification($ticket, $assigned_user, $user);
+
+        if (function_exists('dispatch_ticket_notifications')) {
+            dispatch_ticket_notifications('assigned_to_you', $ticket_id, $user['id'], [
+                'assignee_id' => $assignee_id,
+            ]);
+        }
+    } else {
+        log_activity($ticket_id, $user['id'], 'unassigned', "Assignment removed");
+    }
+
+    api_success(['message' => t('Ticket updated.')]);
+}
+
+/**
+ * Quick-edit: Change "on behalf of" user (AJAX)
+ */
+function api_quick_behalf() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') { api_error('Method not allowed', 405); }
+    require_csrf_token(true);
+    $user = current_user();
+    if (!$user || (!is_agent() && !is_admin())) { api_error('Unauthorized', 401); }
+
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $ticket = get_ticket($ticket_id);
+    if (!$ticket) { api_error('Ticket not found', 404); }
+    if (!can_see_ticket($ticket, $user)) { api_error('Forbidden', 403); }
+
+    // Check if column exists (feature may not be enabled)
+    try {
+        $cols = db_fetch_all("SHOW COLUMNS FROM tickets LIKE 'created_for_user_id'");
+        if (empty($cols)) { api_error('Feature not available', 400); }
+    } catch (Exception $e) { api_error('Feature not available', 400); }
+
+    $old_value = $ticket['created_for_user_id'] ?? null;
+    $new_value = !empty($_POST['created_for_user_id']) ? (int)$_POST['created_for_user_id'] : null;
+
+    db_update('tickets', ['created_for_user_id' => $new_value], 'id = ?', [$ticket_id]);
+    if (function_exists('log_ticket_history')) {
+        log_ticket_history($ticket_id, $user['id'], 'created_for_user_id', $old_value, $new_value);
+    }
+    log_activity($ticket_id, $user['id'], 'ticket_edited', 'On behalf of updated');
+
+    api_success(['message' => t('Ticket updated.')]);
+}
+
+/**
+ * Quick-edit: Change due date (AJAX)
+ */
+function api_quick_due_date() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') { api_error('Method not allowed', 405); }
+    require_csrf_token(true);
+    $user = current_user();
+    if (!$user || (!is_agent() && !is_admin())) { api_error('Unauthorized', 401); }
+
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $ticket = get_ticket($ticket_id);
+    if (!$ticket) { api_error('Ticket not found', 404); }
+    if (!can_see_ticket($ticket, $user)) { api_error('Forbidden', 403); }
+
+    $old_due_date = $ticket['due_date'] ?? null;
+    $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
+
+    if ($due_date) {
+        $due_date = date('Y-m-d H:i:s', strtotime($due_date));
+    }
+
+    db_update('tickets', ['due_date' => $due_date], 'id = ?', [$ticket_id]);
+    if (function_exists('log_ticket_history')) {
+        log_ticket_history($ticket_id, $user['id'], 'due_date', $old_due_date, $due_date);
+    }
+
+    if ($due_date) {
+        log_activity($ticket_id, $user['id'], 'due_date_updated', "Due date set to " . format_date($due_date));
+    } else {
+        log_activity($ticket_id, $user['id'], 'due_date_removed', "Due date removed");
+    }
+
+    // Notify ticket participants about due date change
+    if (function_exists('dispatch_ticket_notifications')) {
+        dispatch_ticket_notifications('ticket_updated', $ticket_id, $user['id'], [
+            'field' => 'due_date',
+            'detail' => $due_date ? format_date($due_date) : '',
+        ]);
+    }
+
+    api_success(['message' => t('Ticket updated.')]);
+}
+
+/**
+ * Quick-edit: Change priority (AJAX)
+ */
+function api_quick_priority() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') { api_error('Method not allowed', 405); }
+    require_csrf_token(true);
+    $user = current_user();
+    if (!$user || (!is_agent() && !is_admin())) { api_error('Unauthorized', 401); }
+
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $ticket = get_ticket($ticket_id);
+    if (!$ticket) { api_error('Ticket not found', 404); }
+    if (!can_see_ticket($ticket, $user)) { api_error('Forbidden', 403); }
+
+    $old_value = $ticket['priority_id'] ?? null;
+    $new_value = !empty($_POST['priority_id']) ? (int)$_POST['priority_id'] : null;
+
+    db_update('tickets', ['priority_id' => $new_value], 'id = ?', [$ticket_id]);
+    if (function_exists('log_ticket_history')) {
+        log_ticket_history($ticket_id, $user['id'], 'priority_id', $old_value, $new_value);
+    }
+
+    $priority_name = '';
+    if ($new_value) {
+        $p = db_fetch_one("SELECT name FROM priorities WHERE id = ?", [$new_value]);
+        $priority_name = $p['name'] ?? '';
+    }
+    log_activity($ticket_id, $user['id'], 'ticket_edited', 'Priority changed' . ($priority_name ? " to {$priority_name}" : ''));
+
+    // Notify ticket participants about priority change
+    if (function_exists('dispatch_ticket_notifications')) {
+        dispatch_ticket_notifications('priority_changed', $ticket_id, $user['id'], [
+            'new_priority' => $priority_name,
+        ]);
+    }
+
+    api_success(['message' => t('Ticket updated.')]);
+}
+
+/**
+ * Quick-edit: Change ticket type (AJAX)
+ */
+function api_quick_type() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') { api_error('Method not allowed', 405); }
+    require_csrf_token(true);
+    $user = current_user();
+    if (!$user || (!is_agent() && !is_admin())) { api_error('Unauthorized', 401); }
+
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $ticket = get_ticket($ticket_id);
+    if (!$ticket) { api_error('Ticket not found', 404); }
+    if (!can_see_ticket($ticket, $user)) { api_error('Forbidden', 403); }
+
+    $old_value = $ticket['type'] ?? null;
+    $new_value = !empty($_POST['type']) ? trim($_POST['type']) : null;
+
+    db_update('tickets', ['type' => $new_value], 'id = ?', [$ticket_id]);
+    if (function_exists('log_ticket_history')) {
+        log_ticket_history($ticket_id, $user['id'], 'type', $old_value, $new_value);
+    }
+    log_activity($ticket_id, $user['id'], 'ticket_edited', 'Ticket type changed' . ($new_value ? " to {$new_value}" : ''));
+
+    // Notify ticket participants about type change
+    if (function_exists('dispatch_ticket_notifications')) {
+        dispatch_ticket_notifications('ticket_updated', $ticket_id, $user['id'], [
+            'field' => 'type',
+            'detail' => $new_value ?? '',
+        ]);
+    }
+
+    api_success(['message' => t('Ticket updated.')]);
+}
+
+/**
+ * Quick-edit: Change company/organization (AJAX)
+ */
+function api_quick_company() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') { api_error('Method not allowed', 405); }
+    require_csrf_token(true);
+    $user = current_user();
+    if (!$user || (!is_agent() && !is_admin())) { api_error('Unauthorized', 401); }
+
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $ticket = get_ticket($ticket_id);
+    if (!$ticket) { api_error('Ticket not found', 404); }
+    if (!can_see_ticket($ticket, $user)) { api_error('Forbidden', 403); }
+
+    $old_org_id = $ticket['organization_id'] ?? null;
+    $org_input = trim((string)($_POST['organization_id'] ?? ''));
+    $new_org_id = ($org_input !== '') ? (int)$org_input : null;
+
+    db_update('tickets', ['organization_id' => $new_org_id], 'id = ?', [$ticket_id]);
+    if (function_exists('log_ticket_history')) {
+        log_ticket_history($ticket_id, $user['id'], 'organization_id', $old_org_id, $new_org_id);
+    }
+    // Get org name for notification
+    $org_name = '';
+    if ($new_org_id) {
+        $org = db_fetch_one("SELECT name FROM organizations WHERE id = ?", [$new_org_id]);
+        $org_name = $org['name'] ?? '';
+    }
+    log_activity($ticket_id, $user['id'], 'company_updated', 'Company updated' . ($org_name ? " to {$org_name}" : ''));
+
+    // Notify ticket participants about company change
+    if (function_exists('dispatch_ticket_notifications')) {
+        dispatch_ticket_notifications('ticket_updated', $ticket_id, $user['id'], [
+            'field' => 'company',
+            'detail' => $org_name,
+        ]);
+    }
+
+    api_success(['message' => t('Ticket updated.')]);
+}
+
 /**
  * Delete time entry (AJAX)
  */

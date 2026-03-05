@@ -1145,6 +1145,14 @@ return [
     'Cancel ticket? The ticket will be deleted.' => 'Ticket stornieren? Das Ticket wird gelöscht.',
     'Ticket cancelled.' => 'Ticket storniert.',
     'Cannot cancel ticket with existing comments or time entries.' => 'Ticket mit vorhandenen Kommentaren oder Zeiteinträgen kann nicht storniert werden.',
+    'Draft restored' => 'Entwurf wiederhergestellt',
+    'Saved' => 'Gespeichert',
+    'Ticket updated.' => 'Ticket aktualisiert.',
+    '{actor} changed {field} to {value} on {subject}' => '{actor} hat {field} auf {value} geändert bei {subject}',
+    '{actor} updated {field} on {subject}' => '{actor} hat {field} aktualisiert bei {subject}',
+    'due date' => 'Fälligkeitsdatum',
+    'type' => 'Typ',
+    'company' => 'Firma',
 ];
 
 

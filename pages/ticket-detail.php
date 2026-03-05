@@ -1411,23 +1411,19 @@ require_once BASE_PATH . '/includes/header.php';
                                     <label class="form-label-sm mb-0.5">
                                         <?php echo get_icon('user', 'w-3 h-3 inline mr-1'); ?>        <?php echo e(t('Assign to')); ?>
                                     </label>
-                                    <form method="post" id="quick-assign-form">
-                                        <?php echo csrf_field(); ?>
-                                        <?php
-                                        $_ai_excl = (function_exists('ai_agent_column_exists') && ai_agent_column_exists()) ? ' AND is_ai_agent = 0' : '';
-                                        $agents = db_fetch_all("SELECT id, first_name, last_name FROM users WHERE role IN ('agent', 'admin') AND is_active = 1{$_ai_excl} ORDER BY first_name");
-                                        ?>
-                                        <select name="assignee_id" class="form-select text-sm py-1.5 w-full" onchange="this.form.submit()">
-                                            <option value=""><?php echo e(t('-- Unassigned --')); ?></option>
-                                            <?php foreach ($agents as $agent): ?>
-                                                    <option value="<?php echo $agent['id']; ?>" <?php echo ($ticket['assignee_id'] ?? 0) == $agent['id'] ? 'selected' : ''; ?>>
-                                                        <?php echo e($agent['first_name'] . ' ' . $agent['last_name']); ?>
-                                                        <?php if ($agent['id'] == $user['id']): ?>(<?php echo e(t('me')); ?>)<?php endif; ?>
-                                                    </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <input type="hidden" name="assign_agent" value="1">
-                                    </form>
+                                    <?php
+                                    $_ai_excl = (function_exists('ai_agent_column_exists') && ai_agent_column_exists()) ? ' AND is_ai_agent = 0' : '';
+                                    $agents = db_fetch_all("SELECT id, first_name, last_name FROM users WHERE role IN ('agent', 'admin') AND is_active = 1{$_ai_excl} ORDER BY first_name");
+                                    ?>
+                                    <select class="form-select text-sm py-1.5 w-full" onchange="quickEditField('quick-assign', {assignee_id: this.value})">
+                                        <option value=""><?php echo e(t('-- Unassigned --')); ?></option>
+                                        <?php foreach ($agents as $agent): ?>
+                                                <option value="<?php echo $agent['id']; ?>" <?php echo ($ticket['assignee_id'] ?? 0) == $agent['id'] ? 'selected' : ''; ?>>
+                                                    <?php echo e($agent['first_name'] . ' ' . $agent['last_name']); ?>
+                                                    <?php if ($agent['id'] == $user['id']): ?>(<?php echo e(t('me')); ?>)<?php endif; ?>
+                                                </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
 
                                 <!-- On Behalf Of -->
@@ -1435,19 +1431,15 @@ require_once BASE_PATH . '/includes/header.php';
                                     <label class="form-label-sm mb-0.5">
                                         <?php echo get_icon('user-shield', 'w-3 h-3 inline mr-1'); ?>        <?php echo e(t('On behalf of')); ?>
                                     </label>
-                                    <form method="post" id="quick-behalf-form">
-                                        <?php echo csrf_field(); ?>
-                                        <?php $behalf_users = db_fetch_all("SELECT id, first_name, last_name FROM users WHERE role IN ('user') AND is_active = 1 ORDER BY first_name"); ?>
-                                        <select name="created_for_user_id" class="form-select text-sm py-1.5 w-full" onchange="this.form.submit()">
-                                            <option value=""><?php echo e(t('-- None --')); ?></option>
-                                            <?php foreach ($behalf_users as $behalf_user): ?>
-                                                    <option value="<?php echo $behalf_user['id']; ?>" <?php echo ($ticket['created_for_user_id'] ?? 0) == $behalf_user['id'] ? 'selected' : ''; ?>>
-                                                        <?php echo e($behalf_user['first_name'] . ' ' . $behalf_user['last_name']); ?>
-                                                    </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <input type="hidden" name="update_behalf" value="1">
-                                    </form>
+                                    <?php $behalf_users = db_fetch_all("SELECT id, first_name, last_name FROM users WHERE role IN ('user') AND is_active = 1 ORDER BY first_name"); ?>
+                                    <select class="form-select text-sm py-1.5 w-full" onchange="quickEditField('quick-behalf', {created_for_user_id: this.value})">
+                                        <option value=""><?php echo e(t('-- None --')); ?></option>
+                                        <?php foreach ($behalf_users as $behalf_user): ?>
+                                                <option value="<?php echo $behalf_user['id']; ?>" <?php echo ($ticket['created_for_user_id'] ?? 0) == $behalf_user['id'] ? 'selected' : ''; ?>>
+                                                    <?php echo e($behalf_user['first_name'] . ' ' . $behalf_user['last_name']); ?>
+                                                </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
 
                                 <!-- Due Date -->
@@ -1455,18 +1447,14 @@ require_once BASE_PATH . '/includes/header.php';
                                     <label class="form-label-sm mb-0.5">
                                         <?php echo get_icon('calendar-alt', 'w-3 h-3 inline mr-1'); ?>        <?php echo e(t('Due date')); ?>
                                     </label>
-                                    <form method="post" id="quick-due-form">
-                                        <?php echo csrf_field(); ?>
-                                        <?php $quick_due_overdue = !empty($ticket['due_date']) && strtotime($ticket['due_date']) < time(); ?>
-                                        <input type="datetime-local" name="due_date"
-                                            value="<?php echo !empty($ticket['due_date']) ? date('Y-m-d\TH:i', strtotime($ticket['due_date'])) : ''; ?>"
-                                            class="form-input text-sm py-1.5 w-full <?php echo $quick_due_overdue ? 'border-red-400 bg-red-50 text-red-700' : ''; ?>"
-                                            onchange="this.form.submit()">
-                                        <?php if ($quick_due_overdue): ?>
-                                                <p class="mt-1 text-xs font-medium text-red-600"><?php echo e(t('Overdue')); ?></p>
-                                        <?php endif; ?>
-                                        <input type="hidden" name="update_due_date" value="1">
-                                    </form>
+                                    <?php $quick_due_overdue = !empty($ticket['due_date']) && strtotime($ticket['due_date']) < time(); ?>
+                                    <input type="datetime-local"
+                                        value="<?php echo !empty($ticket['due_date']) ? date('Y-m-d\TH:i', strtotime($ticket['due_date'])) : ''; ?>"
+                                        class="form-input text-sm py-1.5 w-full <?php echo $quick_due_overdue ? 'border-red-400 bg-red-50 text-red-700' : ''; ?>"
+                                        onchange="quickEditField('quick-due-date', {due_date: this.value})">
+                                    <?php if ($quick_due_overdue): ?>
+                                            <p class="mt-1 text-xs font-medium text-red-600"><?php echo e(t('Overdue')); ?></p>
+                                    <?php endif; ?>
                                 </div>
 
                                 <!-- Priority -->
@@ -1474,19 +1462,15 @@ require_once BASE_PATH . '/includes/header.php';
                                     <label class="form-label-sm mb-0.5">
                                         <?php echo get_icon('flag', 'w-3 h-3 inline mr-1'); ?>        <?php echo e(t('Priority')); ?>
                                     </label>
-                                    <form method="post" id="quick-priority-form">
-                                        <?php echo csrf_field(); ?>
-                                        <?php $priorities = db_fetch_all("SELECT id, name FROM priorities ORDER BY sort_order"); ?>
-                                        <select name="priority_id" class="form-select text-sm py-1.5 w-full" onchange="this.form.submit()">
-                                            <option value=""><?php echo e(t('-- Select --')); ?></option>
-                                            <?php foreach ($priorities as $priority): ?>
-                                                    <option value="<?php echo $priority['id']; ?>" <?php echo ($ticket['priority_id'] ?? 0) == $priority['id'] ? 'selected' : ''; ?>>
-                                                        <?php echo e($priority['name']); ?>
-                                                    </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <input type="hidden" name="update_priority" value="1">
-                                    </form>
+                                    <?php $priorities = db_fetch_all("SELECT id, name FROM priorities ORDER BY sort_order"); ?>
+                                    <select class="form-select text-sm py-1.5 w-full" onchange="quickEditField('quick-priority', {priority_id: this.value})">
+                                        <option value=""><?php echo e(t('-- Select --')); ?></option>
+                                        <?php foreach ($priorities as $priority): ?>
+                                                <option value="<?php echo $priority['id']; ?>" <?php echo ($ticket['priority_id'] ?? 0) == $priority['id'] ? 'selected' : ''; ?>>
+                                                    <?php echo e($priority['name']); ?>
+                                                </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
 
                                 <!-- Ticket Type -->
@@ -1494,19 +1478,15 @@ require_once BASE_PATH . '/includes/header.php';
                                     <label class="form-label-sm mb-0.5">
                                         <?php echo get_icon('folder', 'w-3 h-3 inline mr-1'); ?>        <?php echo e(t('Ticket type')); ?>
                                     </label>
-                                    <form method="post" id="quick-type-form">
-                                        <?php echo csrf_field(); ?>
-                                        <?php $types = db_fetch_all("SELECT slug, name FROM ticket_types WHERE is_active = 1 ORDER BY sort_order"); ?>
-                                        <select name="type" class="form-select text-sm py-1.5 w-full" onchange="this.form.submit()">
-                                            <option value=""><?php echo e(t('-- Select --')); ?></option>
-                                            <?php foreach ($types as $type): ?>
-                                                    <option value="<?php echo $type['slug']; ?>" <?php echo ($ticket['type'] ?? '') === $type['slug'] ? 'selected' : ''; ?>>
-                                                        <?php echo e($type['name']); ?>
-                                                    </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <input type="hidden" name="update_type" value="1">
-                                    </form>
+                                    <?php $types = db_fetch_all("SELECT slug, name FROM ticket_types WHERE is_active = 1 ORDER BY sort_order"); ?>
+                                    <select class="form-select text-sm py-1.5 w-full" onchange="quickEditField('quick-type', {type: this.value})">
+                                        <option value=""><?php echo e(t('-- Select --')); ?></option>
+                                        <?php foreach ($types as $type): ?>
+                                                <option value="<?php echo $type['slug']; ?>" <?php echo ($ticket['type'] ?? '') === $type['slug'] ? 'selected' : ''; ?>>
+                                                    <?php echo e($type['name']); ?>
+                                                </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
 
                                 <!-- Company -->
@@ -1514,19 +1494,15 @@ require_once BASE_PATH . '/includes/header.php';
                                     <label class="form-label-sm mb-0.5">
                                         <?php echo get_icon('building', 'w-3 h-3 inline mr-1'); ?>        <?php echo e(t('Company')); ?>
                                     </label>
-                                    <form method="post" id="quick-company-form">
-                                        <?php echo csrf_field(); ?>
-                                        <?php $companies = db_fetch_all("SELECT id, name FROM organizations ORDER BY name"); ?>
-                                        <select name="organization_id" class="form-select text-sm py-1.5 w-full" onchange="this.form.submit()">
-                                            <option value=""><?php echo e(t('-- None --')); ?></option>
-                                            <?php foreach ($companies as $company): ?>
-                                                    <option value="<?php echo $company['id']; ?>" <?php echo ($ticket['organization_id'] ?? 0) == $company['id'] ? 'selected' : ''; ?>>
-                                                        <?php echo e($company['name']); ?>
-                                                    </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <input type="hidden" name="update_company" value="1">
-                                    </form>
+                                    <?php $companies = db_fetch_all("SELECT id, name FROM organizations ORDER BY name"); ?>
+                                    <select class="form-select text-sm py-1.5 w-full" onchange="quickEditField('quick-company', {organization_id: this.value})">
+                                        <option value=""><?php echo e(t('-- None --')); ?></option>
+                                        <?php foreach ($companies as $company): ?>
+                                                <option value="<?php echo $company['id']; ?>" <?php echo ($ticket['organization_id'] ?? 0) == $company['id'] ? 'selected' : ''; ?>>
+                                                    <?php echo e($company['name']); ?>
+                                                </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                             </div>
 
@@ -1870,6 +1846,31 @@ require_once BASE_PATH . '/includes/header.php';
     function getIcon(name, classes = '') {
         const path = ICONS[name] || ICONS['file'];
         return `<svg xmlns="http://www.w3.org/2000/svg" class="${classes}" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+    }
+
+    // AJAX quick-edit for sidebar dropdowns (no page reload)
+    function quickEditField(action, data) {
+        var body = new FormData();
+        body.append('ticket_id', '<?php echo (int)$ticket['id']; ?>');
+        for (var key in data) {
+            body.append(key, data[key]);
+        }
+        fetch(window.appConfig.apiUrl + '&action=' + action, {
+            method: 'POST',
+            headers: {'X-CSRF-TOKEN': window.csrfToken},
+            body: body
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.success) {
+                if (window.showAppToast) window.showAppToast(res.message || '<?php echo e(t('Saved')); ?>', 'success');
+            } else {
+                if (window.showAppToast) window.showAppToast(res.error || '<?php echo e(t('Error')); ?>', 'error');
+            }
+        })
+        .catch(function() {
+            if (window.showAppToast) window.showAppToast('<?php echo e(t('Error')); ?>', 'error');
+        });
     }
 
     // Share link copy
@@ -3163,6 +3164,30 @@ require_once BASE_PATH . '/includes/header.php';
             }
         });
     }
+</script>
+
+<!-- Autosave for comment editor -->
+<script src="assets/js/autosave.js"></script>
+<script>
+(function() {
+    var ticketId = <?php echo (int)$ticket['id']; ?>;
+
+    // Autosave comment editor draft
+    if (typeof FoxDeskAutosave !== 'undefined' && typeof commentEditor !== 'undefined' && commentEditor) {
+        var commentDraft = FoxDeskAutosave.create({
+            key: 'foxdesk_draft_comment_' + ticketId,
+            formSelector: '#comment-form',
+            quillEditors: {comment: commentEditor},
+            fields: [
+                {name: 'comment', type: 'quill', editorKey: 'comment', selector: '#comment-text'}
+            ],
+            onRestore: function(relTime) {
+                if (window.showAppToast) window.showAppToast('<?php echo e(t('Draft restored')); ?> (' + relTime + ')', 'info');
+            }
+        });
+        commentDraft.init();
+    }
+})();
 </script>
 
 <?php require_once BASE_PATH . '/includes/footer.php';

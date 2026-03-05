@@ -923,6 +923,7 @@ require_once BASE_PATH . '/includes/header.php';
                                     case 'status_changed':   $type_icon = 'refresh-cw';           $type_color = '#8b5cf6'; break;
                                     case 'assigned_to_you':  $type_icon = 'user-plus';            $type_color = '#f59e0b'; break;
                                     case 'priority_changed': $type_icon = 'exclamation-triangle';  $type_color = '#ef4444'; break;
+                                    case 'ticket_updated':  $type_icon = 'edit';                  $type_color = '#6366f1'; break;
                                     case 'due_date_reminder': $type_icon = 'clock';               $type_color = '#ef4444'; break;
                                 }
                                 ?>

@@ -5132,6 +5132,9 @@ table td {
 .modal-panel {
   position: relative;
   width: 100%;
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-light);
   background: #ffffff;
@@ -5144,6 +5147,9 @@ table td {
 
 .modal-panel-body {
   padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .modal-panel-footer {
@@ -5153,6 +5159,7 @@ table td {
   padding: 0.75rem 1.25rem;
   background: var(--surface-secondary);
   border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
 }
 
 /* Time entry inline actions — hover reveal */

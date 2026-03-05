@@ -1145,6 +1145,14 @@ return [
     'Cancel ticket? The ticket will be deleted.' => 'Annullare il ticket? Il ticket verrà eliminato.',
     'Ticket cancelled.' => 'Ticket annullato.',
     'Cannot cancel ticket with existing comments or time entries.' => 'Impossibile annullare un ticket con commenti o registrazioni di tempo esistenti.',
+    'Draft restored' => 'Bozza ripristinata',
+    'Saved' => 'Salvato',
+    'Ticket updated.' => 'Ticket aggiornato.',
+    '{actor} changed {field} to {value} on {subject}' => '{actor} ha cambiato {field} in {value} su {subject}',
+    '{actor} updated {field} on {subject}' => '{actor} ha aggiornato {field} su {subject}',
+    'due date' => 'scadenza',
+    'type' => 'tipo',
+    'company' => 'azienda',
 ];
 
 

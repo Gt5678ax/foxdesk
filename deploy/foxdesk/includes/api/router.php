@@ -73,6 +73,14 @@ function route_api_request($action) {
         'edit-comment' => 'api_edit_comment',
         'delete-comment' => 'api_delete_comment',
 
+        // Quick-edit (AJAX, no page reload)
+        'quick-assign' => 'api_quick_assign',
+        'quick-behalf' => 'api_quick_behalf',
+        'quick-due-date' => 'api_quick_due_date',
+        'quick-priority' => 'api_quick_priority',
+        'quick-type' => 'api_quick_type',
+        'quick-company' => 'api_quick_company',
+
         // User handlers
         'search_users' => 'api_search_users',
         'get_user_tickets' => 'api_get_user_tickets',

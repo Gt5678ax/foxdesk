@@ -91,21 +91,17 @@ function get_dashboard_data($user, $tags = [])
     ];
 
     // ─── Total visible tickets ──────────────────────────────
-    if (empty($tags)) {
-        $status_counts = count_tickets_by_status();
-    } else {
-        // Tag-aware status counts (when tag filter is active)
-        $status_counts = db_fetch_all("
-            SELECT s.id, s.name, s.color, s.is_closed, COUNT(t.id) as count
-            FROM statuses s
-            LEFT JOIN tickets t ON t.status_id = s.id
-                AND {$scope_where}
-                AND (t.is_archived IS NULL OR t.is_archived = 0)
-                {$tag_where}
-            GROUP BY s.id
-            ORDER BY s.sort_order ASC
-        ", array_merge($scope_params, $tag_params));
-    }
+    // Always use $scope_where so counts match the dashboard context exactly
+    $status_counts = db_fetch_all("
+        SELECT s.id, s.name, s.color, s.is_closed, COUNT(t.id) as count
+        FROM statuses s
+        LEFT JOIN tickets t ON t.status_id = s.id
+            AND {$scope_where}
+            AND (t.is_archived IS NULL OR t.is_archived = 0)
+            {$tag_where}
+        GROUP BY s.id
+        ORDER BY s.sort_order ASC
+    ", array_merge($scope_params, $tag_params));
     $total_visible_tickets = 0;
     $closed_visible_tickets = 0;
     $status_chart_ids = [];

@@ -91,21 +91,17 @@ function get_dashboard_data($user, $tags = [])
     ];
 
     // ─── Total visible tickets ──────────────────────────────
-    if (empty($tags)) {
-        $status_counts = count_tickets_by_status();
-    } else {
-        // Tag-aware status counts (when tag filter is active)
-        $status_counts = db_fetch_all("
-            SELECT s.id, s.name, s.color, s.is_closed, COUNT(t.id) as count
-            FROM statuses s
-            LEFT JOIN tickets t ON t.status_id = s.id
-                AND {$scope_where}
-                AND (t.is_archived IS NULL OR t.is_archived = 0)
-                {$tag_where}
-            GROUP BY s.id
-            ORDER BY s.sort_order ASC
-        ", array_merge($scope_params, $tag_params));
-    }
+    // Always use $scope_where so counts match the dashboard context exactly
+    $status_counts = db_fetch_all("
+        SELECT s.id, s.name, s.color, s.is_closed, COUNT(t.id) as count
+        FROM statuses s
+        LEFT JOIN tickets t ON t.status_id = s.id
+            AND {$scope_where}
+            AND (t.is_archived IS NULL OR t.is_archived = 0)
+            {$tag_where}
+        GROUP BY s.id
+        ORDER BY s.sort_order ASC
+    ", array_merge($scope_params, $tag_params));
     $total_visible_tickets = 0;
     $closed_visible_tickets = 0;
     $status_chart_ids = [];
@@ -364,11 +360,11 @@ function get_dashboard_data($user, $tags = [])
     //   Row 3: status_chart (full width)
     //   Row 4: timers
     if ($is_admin) {
-        $default_order = ['overview', 'my_time', 'new_tickets', 'deadlines', 'team_time', 'due_week', 'focus', 'status_chart', 'timers'];
+        $default_order = ['overview', 'notifications', 'my_time', 'new_tickets', 'deadlines', 'team_time', 'due_week', 'focus', 'status_chart', 'timers'];
     } elseif ($is_agent) {
-        $default_order = ['overview', 'my_time', 'new_tickets', 'deadlines', 'focus', 'due_week', 'timers'];
+        $default_order = ['overview', 'notifications', 'my_time', 'new_tickets', 'deadlines', 'focus', 'due_week', 'timers'];
     } else {
-        $default_order = ['overview', 'recent'];
+        $default_order = ['overview', 'notifications', 'recent'];
     }
 
     // Default sizes per widget (3-col grid: "half" = 1 col, "full" = 3 cols)
@@ -383,6 +379,7 @@ function get_dashboard_data($user, $tags = [])
         'status_chart' => 'full',
         'timers'       => 'full',
         'recent'       => 'full',
+        'notifications' => 'full',
     ];
 
     $hidden_sections = [];
@@ -442,9 +439,19 @@ function get_dashboard_data($user, $tags = [])
         'recent' => t('Your recent tickets'),
         'status_chart' => t('By status'),
         'due_week' => t('Due this week'),
+        'notifications' => t('Notifications'),
     ];
 
     $tags_supported = function_exists('ticket_tags_column_exists') && ticket_tags_column_exists();
+
+    // ─── Notifications (for dashboard widget) ─────────────
+    $dashboard_notifications = [];
+    $dashboard_unread_count = 0;
+    if (function_exists('notifications_table_exists') && notifications_table_exists()) {
+        $notif_result = get_user_notifications((int) $user['id'], 15, 0);
+        $dashboard_notifications = $notif_result['notifications'];
+        $dashboard_unread_count = $notif_result['unread_count'];
+    }
 
     return [
         'tags_supported' => $tags_supported,
@@ -481,6 +488,8 @@ function get_dashboard_data($user, $tags = [])
         'due_week_tickets' => $due_week_tickets,
         'focus_tickets' => $focus_tickets,
         'active_timers' => $active_timers,
+        'dashboard_notifications' => $dashboard_notifications,
+        'dashboard_unread_count' => $dashboard_unread_count,
         'section_order' => $section_order,
         'hidden_sections' => $hidden_sections,
         'widget_sizes' => $widget_sizes,

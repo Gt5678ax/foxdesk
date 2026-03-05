@@ -1144,6 +1144,14 @@ return [
     'Cancel ticket? The ticket will be deleted.' => 'Stornovat tiket? Tiket bude smazán.',
     'Ticket cancelled.' => 'Tiket stornován.',
     'Cannot cancel ticket with existing comments or time entries.' => 'Nelze stornovat tiket s existujícími komentáři nebo záznamy času.',
+    'Draft restored' => 'Koncept obnoven',
+    'Saved' => 'Uloženo',
+    'Ticket updated.' => 'Tiket aktualizován.',
+    '{actor} changed {field} to {value} on {subject}' => '{actor} změnil(a) {field} na {value} u {subject}',
+    '{actor} updated {field} on {subject}' => '{actor} aktualizoval(a) {field} u {subject}',
+    'due date' => 'termín',
+    'type' => 'typ',
+    'company' => 'firma',
 ];
 
 

@@ -1153,4 +1153,52 @@ include BASE_PATH . '/includes/components/page-header.php';
     })();
 </script>
 
+<!-- Autosave for new ticket form -->
+<script src="assets/js/autosave.js"></script>
+<script>
+(function() {
+    if (typeof FoxDeskAutosave === 'undefined') return;
+
+    var draft = FoxDeskAutosave.create({
+        key: 'foxdesk_draft_new_ticket',
+        formSelector: '#new-ticket-form',
+        quillEditors: {description: window.descriptionEditor},
+        fields: [
+            {name: 'title', selector: '#ticket-title-input', type: 'input'},
+            {name: 'description', type: 'quill', editorKey: 'description', selector: '#description-input'},
+            {name: 'priority_id', selector: '#priority_id', type: 'hidden'},
+            {name: 'type', selector: '#type', type: 'hidden'}
+        ],
+        pillRestore: function(fieldName, value) {
+            // Re-select pill UI for priority and type
+            if (fieldName === 'priority_id') {
+                var group = 'priority';
+                document.querySelectorAll('[data-group="' + group + '"]').forEach(function(el) {
+                    el.classList.remove('selected');
+                    if (el.dataset.value === value) el.classList.add('selected');
+                });
+            } else if (fieldName === 'type') {
+                var group = 'type';
+                document.querySelectorAll('[data-group="' + group + '"]').forEach(function(el) {
+                    el.classList.remove('selected');
+                    if (el.dataset.value === value) el.classList.add('selected');
+                });
+            }
+        },
+        onRestore: function(relTime) {
+            if (window.showAppToast) window.showAppToast('<?php echo e(t('Draft restored')); ?> (' + relTime + ')', 'info');
+        }
+    });
+    draft.init();
+
+    // Suppress beforeunload on cancel link
+    var cancelLink = document.querySelector('a[href*="dashboard"]');
+    if (cancelLink) {
+        cancelLink.addEventListener('click', function() {
+            draft.suppressBeforeUnload();
+        });
+    }
+})();
+</script>
+
 <?php require_once BASE_PATH . '/includes/footer.php'; 

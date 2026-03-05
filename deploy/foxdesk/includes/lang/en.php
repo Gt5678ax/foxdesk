@@ -1144,6 +1144,14 @@ return [
     'Cancel ticket? The ticket will be deleted.' => 'Cancel ticket? The ticket will be deleted.',
     'Ticket cancelled.' => 'Ticket cancelled.',
     'Cannot cancel ticket with existing comments or time entries.' => 'Cannot cancel ticket with existing comments or time entries.',
+    'Draft restored' => 'Draft restored',
+    'Saved' => 'Saved',
+    'Ticket updated.' => 'Ticket updated.',
+    '{actor} changed {field} to {value} on {subject}' => '{actor} changed {field} to {value} on {subject}',
+    '{actor} updated {field} on {subject}' => '{actor} updated {field} on {subject}',
+    'due date' => 'due date',
+    'type' => 'type',
+    'company' => 'company',
 ];
 
 
