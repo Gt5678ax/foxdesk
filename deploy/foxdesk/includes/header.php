@@ -78,8 +78,8 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
     <?php
     $custom_favicon = $settings['favicon'] ?? '';
     $default_favicon = "data:image/svg+xml," . rawurlencode('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 32 32\'><rect width=\'32\' height=\'32\' rx=\'6\' fill=\'#3b82f6\'/><text x=\'16\' y=\'22\' font-family=\'Arial,sans-serif\' font-size=\'18\' font-weight=\'bold\' fill=\'white\' text-anchor=\'middle\'>' . strtoupper(substr($app_name, 0, 1)) . '</text></svg>');
-    $favicon_href = $custom_favicon ? $custom_favicon : $default_favicon;
-    $favicon_type = $custom_favicon ? 'image/x-icon' : 'image/svg+xml';
+    $favicon_href = $custom_favicon ? upload_url($custom_favicon) : $default_favicon;
+    $favicon_type = $custom_favicon ? 'image/png' : 'image/svg+xml';
     ?>
     <link rel="icon" id="favicon" type="<?php echo $favicon_type; ?>" href="<?php echo $favicon_href; ?>">
     <!-- PWA -->
