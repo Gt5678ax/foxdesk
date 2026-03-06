@@ -210,8 +210,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!empty($updates)) {
                         db_update('users', $updates, 'id = ?', [$user_id]);
                     }
+
+                    // Send welcome email with login credentials
+                    if (!empty($_POST['send_welcome_email'])) {
+                        require_once BASE_PATH . '/includes/mailer.php';
+                        $settings = get_settings();
+                        $app_name = $settings['app_name'] ?? (defined('APP_NAME') ? APP_NAME : 'FoxDesk');
+                        $login_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+
+                        $subject = t('Welcome to {app}', ['app' => $app_name]);
+                        $body = t('Hello {name},', ['name' => $first_name]) . "\n\n"
+                            . t('Your account has been created.') . "\n\n"
+                            . t('Email') . ": " . $email . "\n"
+                            . t('Password') . ": " . $password . "\n\n"
+                            . t('Login') . ": " . $login_url . "\n\n"
+                            . t('After signing in, you can change your password in your profile settings.') . "\n\n"
+                            . t('Regards') . ",\n" . $app_name;
+
+                        $sent = send_email($email, $subject, $body, false, true);
+                        if ($sent) {
+                            flash(t('User created. Login credentials sent to {email}.', ['email' => $email]), 'success');
+                        } else {
+                            flash(t('User created. Email could not be sent — credentials: {email} / {password}', ['email' => $email, 'password' => $password]), 'warning');
+                        }
+                    } else {
+                        flash(t('User created.'), 'success');
+                    }
+                } else {
+                    flash(t('User created.'), 'success');
                 }
-                flash(t('User created.'), 'success');
             }
         }
         redirect('admin', ['section' => 'users']);
@@ -1536,6 +1563,13 @@ include BASE_PATH . '/includes/components/page-header.php';
                                     </label>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="border-t pt-4 mt-4" style="border-color: var(--border-primary);">
+                            <label class="flex items-center text-sm cursor-pointer">
+                                <input type="checkbox" name="send_welcome_email" class="mr-2">
+                                <?php echo e(t('Send login credentials via email')); ?>
+                            </label>
                         </div>
 
                         <button type="submit" name="add_user" class="btn btn-primary w-full">

@@ -1,7 +1,7 @@
-# Build foxdesk-0.3.62.zip with FORWARD slashes (required for Linux PHP extraction)
+# Build foxdesk-0.3.63.zip with FORWARD slashes (required for Linux PHP extraction)
 $src = 'C:/Dev/FoxDesk-dev/deploy/foxdesk'
-$prefix = 'foxdesk-0.3.62'
-$zipOut = 'C:/Dev/FoxDesk-dev/tmp/foxdesk-0.3.62.zip'
+$prefix = 'foxdesk-0.3.63'
+$zipOut = 'C:/Dev/FoxDesk-dev/tmp/foxdesk-0.3.63.zip'
 
 # Clean
 if (Test-Path $zipOut) { Remove-Item $zipOut -Force }

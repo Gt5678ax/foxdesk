@@ -448,7 +448,7 @@ function get_dashboard_data($user, $tags = [])
     $dashboard_notifications = [];
     $dashboard_unread_count = 0;
     if (function_exists('notifications_table_exists') && notifications_table_exists()) {
-        $notif_result = get_user_notifications((int) $user['id'], 15, 0);
+        $notif_result = get_user_notifications((int) $user['id'], 5, 0);
         $dashboard_notifications = $notif_result['notifications'];
         $dashboard_unread_count = $notif_result['unread_count'];
     }

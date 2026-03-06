@@ -451,8 +451,8 @@ require_once BASE_PATH . '/includes/header.php';
     }
 
     .db-avatar {
-        width: 26px;
-        height: 26px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         flex-shrink: 0;
         display: flex;
@@ -462,10 +462,21 @@ require_once BASE_PATH . '/includes/header.php';
         font-weight: 700;
         color: #fff;
         background: var(--primary);
+        overflow: hidden;
+    }
+    img.db-avatar {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px;
+        min-height: 32px;
+        object-fit: cover;
+        display: block;
+        border-radius: 50%;
     }
 
     .db-avatar-cell {
-        width: 30px;
+        width: 40px;
+        min-width: 40px;
         padding-right: 0;
     }
 
@@ -818,10 +829,10 @@ require_once BASE_PATH . '/includes/header.php';
                         include BASE_PATH . '/includes/components/kpi-card.php';
 
                         $kpi_href = $link_new_today;
-                        $kpi_color = 'green';
+                        $kpi_color = 'blue';
                         $kpi_label = t('New today');
                         $kpi_value = $new_ticket_stats['today'];
-                        $kpi_value_class = $new_ticket_stats['today'] > 0 ? 'text-emerald-600' : '';
+                        $kpi_value_class = $new_ticket_stats['today'] > 0 ? 'text-blue-600' : '';
                         $kpi_sub = e(t('This week')) . ': ' . $new_ticket_stats['week'];
                         include BASE_PATH . '/includes/components/kpi-card.php';
 

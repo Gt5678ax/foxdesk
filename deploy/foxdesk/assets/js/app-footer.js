@@ -153,9 +153,7 @@ window.showAppToast = function(message, type, options) {
     stack.appendChild(wrapper);
 
     scheduleFlashAutoDismiss(wrapper, options.duration != null ? options.duration : 5000);
-    if (options.sound !== false) {
-        playNotificationSound(flashType);
-    }
+    // Sound removed from toasts — only plays for new notification arrivals (header.php)
     return true;
 };
 
@@ -223,10 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
         scheduleFlashAutoDismiss(msg, 5000);
     });
 
-    var existingToast = document.querySelector('#app-toast-stack .flash-message');
-    if (existingToast) {
-        playNotificationSound(normalizeFlashType(existingToast.dataset.flashType || 'info'));
-    }
+    // Sound on page load removed — only plays for new notification arrivals
 });
 
 // Manual flash close (delegated)

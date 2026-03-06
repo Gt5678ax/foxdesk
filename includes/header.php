@@ -180,7 +180,7 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
                 <?php $app_logo = get_setting('app_logo', ''); ?>
                 <?php if ($app_logo): ?>
                     <img src="<?php echo e(upload_url($app_logo)); ?>" alt="<?php echo e($app_name); ?>"
-                         class="w-10 h-10 rounded-full object-cover shadow-lg transition-transform group-hover:scale-105">
+                         class="w-10 h-10 rounded-xl object-cover shadow-lg transition-transform group-hover:scale-105">
                 <?php else: ?>
                     <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
                         <span class="text-white text-xl font-bold"><?php echo strtoupper(substr($app_name, 0, 1)); ?></span>
@@ -687,6 +687,7 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
             var _notifOpen = false;
             var _pollInterval = null;
             var _lastCount = 0;
+            var _firstPoll = true;
 
             function esc(s) {
                 var d = document.createElement('div');
@@ -843,13 +844,14 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
                     .then(function(res) {
                         if (res.success) {
                             var newCount = res.unread_count || 0;
-                            if (newCount > _lastCount && newCount > 0) {
-                                // New notifications arrived
+                            if (newCount > _lastCount && newCount > 0 && !_firstPoll) {
+                                // New notifications arrived (skip first poll to avoid sound on page load)
                                 if (window.appNotificationPrefs && window.appNotificationPrefs.soundEnabled) {
                                     playNotifSound();
                                 }
                                 _notifLoaded = false; // Force reload on next open
                             }
+                            _firstPoll = false;
                             updateBadge(newCount);
                         }
                     })
