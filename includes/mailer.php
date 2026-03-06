@@ -795,6 +795,28 @@ function get_builtin_email_template($key, $lang = 'en')
                 'subject' => 'Temporizador funcionando demasiado tiempo - Ticket #{ticket_code}',
                 'body' => "Estimado/a {user_name},\n\nSu temporizador ha estado funcionando durante {elapsed_time} en el ticket \"{ticket_title}\".\n\nIniciado a las: {started_at}\nTicket: #{ticket_code} - {ticket_title}\n\nPor favor, compruebe si olvidó detener el temporizador.\n\nVer ticket: {ticket_url}\n\nAtentamente,\n\nEl equipo de {app_name}"
             ]
+        ],
+        'welcome_email' => [
+            'en' => [
+                'subject' => 'Welcome to {app_name}',
+                'body' => "Hello {name},\n\nYour account has been created.\n\nEmail: {email}\nPassword: {password}\n\nLogin: {login_url}\n\nAfter signing in, you can change your password in your profile settings.\n\nRegards,\n{app_name}"
+            ],
+            'cs' => [
+                'subject' => 'Vítejte v {app_name}',
+                'body' => "Dobrý den {name},\n\nVáš účet byl vytvořen.\n\nEmail: {email}\nHeslo: {password}\n\nPřihlášení: {login_url}\n\nPo přihlášení si můžete změnit heslo v nastavení profilu.\n\nS pozdravem,\n{app_name}"
+            ],
+            'de' => [
+                'subject' => 'Willkommen bei {app_name}',
+                'body' => "Hallo {name},\n\nIhr Konto wurde erstellt.\n\nE-Mail: {email}\nPasswort: {password}\n\nAnmeldung: {login_url}\n\nNach der Anmeldung können Sie Ihr Passwort in Ihren Profileinstellungen ändern.\n\nMit freundlichen Grüßen,\n{app_name}"
+            ],
+            'it' => [
+                'subject' => 'Benvenuto in {app_name}',
+                'body' => "Ciao {name},\n\nIl tuo account è stato creato.\n\nEmail: {email}\nPassword: {password}\n\nAccesso: {login_url}\n\nDopo aver effettuato l'accesso, puoi modificare la password nelle impostazioni del profilo.\n\nCordiali saluti,\n{app_name}"
+            ],
+            'es' => [
+                'subject' => 'Bienvenido a {app_name}',
+                'body' => "Hola {name},\n\nSu cuenta ha sido creada.\n\nCorreo electrónico: {email}\nContraseña: {password}\n\nIniciar sesión: {login_url}\n\nDespués de iniciar sesión, puede cambiar su contraseña en la configuración de su perfil.\n\nSaludos,\n{app_name}"
+            ]
         ]
     ];
 

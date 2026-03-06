@@ -1,10 +1,11 @@
 {
-    "version": "0.3.65",
+    "version": "0.3.66",
     "date": "2026-03-06",
     "min_php": "8.1",
     "changelog": [
-        "Bundled FoxDesk logo as default app logo and favicon (no DB setup needed)",
-        "Logo and favicon now work out of the box on fresh installations"
+        "Welcome email now uses the template system — editable in Settings → Templates",
+        "Added 'Send password reset email' button in admin user edit modal",
+        "Welcome email available in 5 languages (EN, CS, DE, IT, ES)"
     ],
     "delete_files": []
 }

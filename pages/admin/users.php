@@ -215,19 +215,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!empty($_POST['send_welcome_email'])) {
                         require_once BASE_PATH . '/includes/mailer.php';
                         $settings = get_settings();
-                        $app_name = $settings['app_name'] ?? (defined('APP_NAME') ? APP_NAME : 'FoxDesk');
-                        $login_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+                        $app_name = !empty($settings['app_name']) ? $settings['app_name'] : 'FoxDesk';
+                        $login_url = get_app_url();
+                        $lang = $_POST['language'] ?? 'en';
 
-                        $subject = t('Welcome to {app}', ['app' => $app_name]);
-                        $body = t('Hello {name},', ['name' => $first_name]) . "\n\n"
-                            . t('Your account has been created.') . "\n\n"
-                            . t('Email') . ": " . $email . "\n"
-                            . t('Password') . ": " . $password . "\n\n"
-                            . t('Login') . ": " . $login_url . "\n\n"
-                            . t('After signing in, you can change your password in your profile settings.') . "\n\n"
-                            . t('Regards') . ",\n" . $app_name;
+                        $template = get_email_template('welcome_email', $lang);
+                        if ($template) {
+                            $placeholders = [
+                                '{name}' => $first_name,
+                                '{email}' => $email,
+                                '{password}' => $password,
+                                '{login_url}' => $login_url,
+                                '{app_name}' => $app_name
+                            ];
 
-                        $sent = send_email($email, $subject, $body, false, true);
+                            $subject = str_replace(array_keys($placeholders), array_values($placeholders), $template['subject']);
+                            $body = str_replace(array_keys($placeholders), array_values($placeholders), $template['body']);
+
+                            $sent = send_email($email, $subject, $body, false, true);
+                        } else {
+                            $sent = false;
+                        }
+
                         if ($sent) {
                             flash(t('User created. Login credentials sent to {email}.', ['email' => $email]), 'success');
                         } else {
@@ -371,6 +380,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash(t('Password updated.'), 'success');
         } else {
             flash(implode(' ', $validation['errors']), 'error');
+        }
+        redirect('admin', ['section' => 'users']);
+    }
+
+    // Send password reset email from admin
+    if (isset($_POST['send_reset_email'])) {
+        $id = (int) $_POST['id'];
+        $user = db_fetch_one("SELECT id, first_name, email, is_active FROM users WHERE id = ?", [$id]);
+
+        if ($user && $user['is_active']) {
+            require_once BASE_PATH . '/includes/mailer.php';
+            require_once BASE_PATH . '/includes/security-helpers.php';
+
+            $token = generate_reset_token();
+            $token_hash = hash_reset_token($token);
+            $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+            db_update('users', [
+                'reset_token' => $token_hash,
+                'reset_token_expires' => $expires
+            ], 'id = ?', [$user['id']]);
+
+            $reset_link = get_app_url() . '/index.php?page=reset-password&token=' . $token;
+            $sent = send_password_reset_email($user['email'], $user['first_name'], $reset_link);
+
+            if ($sent) {
+                flash(t('Password reset email sent to {email}.', ['email' => $user['email']]), 'success');
+            } else {
+                flash(t('Failed to send password reset email.'), 'error');
+            }
+        } else {
+            flash(t('User not found or inactive.'), 'error');
         }
         redirect('admin', ['section' => 'users']);
     }
@@ -2095,6 +2136,14 @@ include BASE_PATH . '/includes/components/page-header.php';
                             <?php echo e(t('Change password')); ?>
                         </button>
                     </form>
+
+                    <form method="post" class="mt-3">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="id" id="reset_email_id">
+                        <button type="submit" name="send_reset_email" class="btn btn-secondary w-full sm:w-auto">
+                            <?php echo e(t('Send password reset email')); ?>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -2257,6 +2306,7 @@ include BASE_PATH . '/includes/components/page-header.php';
             function editUser(user) {
                 document.getElementById('edit_id').value = user.id;
                 document.getElementById('reset_id').value = user.id;
+                document.getElementById('reset_email_id').value = user.id;
                 document.getElementById('edit_email').value = user.email || '';
                 document.getElementById('edit_first_name').value = user.first_name;
                 document.getElementById('edit_last_name').value = user.last_name || '';
