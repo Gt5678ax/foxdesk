@@ -1,9 +1,10 @@
 {
-    "version": "0.3.64",
+    "version": "0.3.65",
     "date": "2026-03-06",
     "min_php": "8.1",
     "changelog": [
-        "Fixed custom favicon not loading (missing upload_url conversion)"
+        "Bundled FoxDesk logo as default app logo and favicon (no DB setup needed)",
+        "Logo and favicon now work out of the box on fresh installations"
     ],
     "delete_files": []
 }

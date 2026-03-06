@@ -77,9 +77,13 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
     <!-- Favicon -->
     <?php
     $custom_favicon = $settings['favicon'] ?? '';
-    $default_favicon = "data:image/svg+xml," . rawurlencode('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 32 32\'><rect width=\'32\' height=\'32\' rx=\'6\' fill=\'#3b82f6\'/><text x=\'16\' y=\'22\' font-family=\'Arial,sans-serif\' font-size=\'18\' font-weight=\'bold\' fill=\'white\' text-anchor=\'middle\'>' . strtoupper(substr($app_name, 0, 1)) . '</text></svg>');
-    $favicon_href = $custom_favicon ? upload_url($custom_favicon) : $default_favicon;
-    $favicon_type = $custom_favicon ? 'image/png' : 'image/svg+xml';
+    if ($custom_favicon) {
+        $favicon_href = upload_url($custom_favicon);
+        $favicon_type = 'image/png';
+    } else {
+        $favicon_href = 'assets/img/logo.png';
+        $favicon_type = 'image/png';
+    }
     ?>
     <link rel="icon" id="favicon" type="<?php echo $favicon_type; ?>" href="<?php echo $favicon_href; ?>">
     <!-- PWA -->
@@ -182,9 +186,8 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
                     <img src="<?php echo e(upload_url($app_logo)); ?>" alt="<?php echo e($app_name); ?>"
                          class="w-10 h-10 rounded-xl object-cover shadow-lg transition-transform group-hover:scale-105">
                 <?php else: ?>
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
-                        <span class="text-white text-xl font-bold"><?php echo strtoupper(substr($app_name, 0, 1)); ?></span>
-                    </div>
+                    <img src="assets/img/logo.png" alt="<?php echo e($app_name); ?>"
+                         class="w-10 h-10 rounded-xl object-cover shadow-lg transition-transform group-hover:scale-105">
                 <?php endif; ?>
                 <span class="text-xl font-bold text-gradient"><?php echo e($app_name); ?></span>
             </a>
