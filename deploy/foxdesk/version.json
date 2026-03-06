@@ -1,15 +1,9 @@
 {
-    "version": "0.3.63",
+    "version": "0.3.64",
     "date": "2026-03-06",
     "min_php": "8.1",
     "changelog": [
-        "Fixed notification sound playing on every page load instead of only for new notifications",
-        "Fixed deformed team avatars on the dashboard",
-        "App logo now displays with rounded corners instead of circle",
-        "Dashboard notifications limited to 5 with View All link",
-        "New today KPI card styled in blue",
-        "Optional welcome email with login credentials when creating a new user",
-        "Removed toast notification sounds (kept only polling sound for new notifications)"
+        "Fixed custom favicon not loading (missing upload_url conversion)"
     ],
     "delete_files": []
 }
