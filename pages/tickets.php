@@ -227,7 +227,7 @@ if (empty($tag_filters)) {
 $tag_filter_csv = implode(', ', $tag_filters);
 $assigned_to = isset($_GET['assigned_to']) ? (int) $_GET['assigned_to'] : null;
 $sort = trim((string) ($_GET['sort'] ?? 'newest'));
-$allowed_sorts = ['newest', 'oldest', 'priority', 'status', 'due_date'];
+$allowed_sorts = ['newest', 'oldest', 'last_updated', 'ticket_number', 'ticket_number_asc', 'priority', 'status', 'due_date'];
 if ($tags_supported) {
     $allowed_sorts[] = 'tags';
 }
@@ -372,19 +372,7 @@ if ($staff_scope) {
     $filters['assigned_to_staff'] = true;
 }
 
-$per_page = 20;
-$page_num = max(1, (int) ($_GET['p'] ?? 1));
-$filters['limit'] = $per_page;
-$filters['offset'] = ($page_num - 1) * $per_page;
-
-$count_filters = $filters;
-unset($count_filters['limit'], $count_filters['offset']);
-$total_tickets = get_tickets_count($count_filters);
-$total_pages = max(1, (int) ceil($total_tickets / $per_page));
-if ($page_num > $total_pages) {
-    $page_num = $total_pages;
-    $filters['offset'] = ($page_num - 1) * $per_page;
-}
+$total_tickets = get_tickets_count($filters);
 
 $tickets = get_tickets($filters);
 
@@ -530,11 +518,14 @@ if (!is_admin() && !is_agent() && isset($scope) && $scope === 'organization' && 
 
 // Sort dropdown in page header (syncs with hidden input in filter form via JS)
 $sort_options = [
-    'newest'   => t('Newest'),
-    'oldest'   => t('Oldest'),
-    'priority' => t('Priority'),
-    'status'   => t('Status'),
-    'due_date' => t('Due date'),
+    'newest'           => t('Newest'),
+    'oldest'           => t('Oldest'),
+    'last_updated'     => t('Last updated'),
+    'ticket_number'    => t('Ticket # (newest)'),
+    'ticket_number_asc'=> t('Ticket # (oldest)'),
+    'priority'         => t('Priority'),
+    'status'           => t('Status'),
+    'due_date'         => t('Due date'),
 ];
 if ($tags_supported) {
     $sort_options['tags'] = t('Tags');
@@ -554,44 +545,6 @@ if ($bulk_actions_enabled) {
 }
 if (!$is_archive) {
     $page_header_actions .= '<a href="' . url('new-ticket') . '" class="btn btn-primary">' . get_icon('plus', 'mr-1') . e(t('New ticket')) . '</a>';
-}
-
-$pagination_params = [];
-if ($is_archive) {
-    $pagination_params['archived'] = '1';
-}
-if (!empty($status_id)) {
-    $pagination_params['status'] = $status_id;
-}
-if (!empty($priority_id)) {
-    $pagination_params['priority'] = $priority_id;
-}
-if (!empty($organization_id) && is_admin()) {
-    $pagination_params['organization'] = $organization_id;
-}
-if ($search_query !== '') {
-    $pagination_params['search'] = $search_query;
-}
-if ($tags_supported && !empty($tag_filters)) {
-    $pagination_params['tags'] = implode(',', $tag_filters);
-}
-if ($user_search !== '') {
-    $pagination_params['user'] = $user_search;
-}
-if ($created_date_value !== '') {
-    $pagination_params['created_date'] = $created_date_value;
-}
-if ($due_date_filter !== '') {
-    $pagination_params['due_date'] = $due_date_filter;
-}
-if (!empty($sort) && $sort !== 'newest') {
-    $pagination_params['sort'] = $sort;
-}
-if ($staff_scope) {
-    $pagination_params['scope'] = 'staff';
-}
-if (!empty($assigned_to)) {
-    $pagination_params['assigned_to'] = $assigned_to;
 }
 
 $build_tag_filter_url = function ($tag_value) use ($is_archive, $normalize_tag_filters, $tag_filters) {
@@ -950,6 +903,9 @@ include BASE_PATH . '/includes/components/page-header.php';
                 <select name="sort" class="form-select form-select-sm text-xs" onchange="this.form.submit()">
                     <option value="newest" <?php echo $sort === 'newest' ? 'selected' : ''; ?>><?php echo e(t('Newest')); ?></option>
                     <option value="oldest" <?php echo $sort === 'oldest' ? 'selected' : ''; ?>><?php echo e(t('Oldest')); ?></option>
+                    <option value="last_updated" <?php echo $sort === 'last_updated' ? 'selected' : ''; ?>><?php echo e(t('Last updated')); ?></option>
+                    <option value="ticket_number" <?php echo $sort === 'ticket_number' ? 'selected' : ''; ?>><?php echo e(t('Ticket # (newest)')); ?></option>
+                    <option value="ticket_number_asc" <?php echo $sort === 'ticket_number_asc' ? 'selected' : ''; ?>><?php echo e(t('Ticket # (oldest)')); ?></option>
                     <option value="priority" <?php echo $sort === 'priority' ? 'selected' : ''; ?>><?php echo e(t('Priority')); ?></option>
                     <option value="status" <?php echo $sort === 'status' ? 'selected' : ''; ?>><?php echo e(t('Status')); ?></option>
                     <option value="due_date" <?php echo $sort === 'due_date' ? 'selected' : ''; ?>><?php echo e(t('Due date')); ?></option>
@@ -1449,21 +1405,6 @@ include BASE_PATH . '/includes/components/page-header.php';
         <?php endif; ?>
     <?php endif; ?>
 
-    <?php if (!empty($tickets) && $total_pages > 1): ?>
-        <div class="border-t px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-sm" style="background: var(--surface-secondary); color: var(--text-secondary); border-color: var(--border-light);">
-            <div><?php echo e(t('Page {current} of {total}', ['current' => $page_num, 'total' => $total_pages])); ?></div>
-            <div class="flex items-center gap-2">
-                <?php if ($page_num > 1): ?>
-                    <a href="<?php echo url('tickets', array_merge($pagination_params, ['p' => $page_num - 1])); ?>"
-                        class="btn btn-secondary btn-sm"><?php echo e(t('Previous')); ?></a>
-                <?php endif; ?>
-                <?php if ($page_num < $total_pages): ?>
-                    <a href="<?php echo url('tickets', array_merge($pagination_params, ['p' => $page_num + 1])); ?>"
-                        class="btn btn-secondary btn-sm"><?php echo e(t('Next')); ?></a>
-                <?php endif; ?>
-            </div>
-        </div>
-    <?php endif; ?>
 </div>
 
 <script>

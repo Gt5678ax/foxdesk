@@ -24,6 +24,61 @@ function notifications_table_exists(): bool
     return $exists;
 }
 
+/**
+ * Auto-create notifications table if missing (rolling upgrade support).
+ */
+function ensure_notifications_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+
+    if (notifications_table_exists()) {
+        // Ensure actor_id column exists (may be missing from manually created tables)
+        if (!column_exists('notifications', 'actor_id')) {
+            try {
+                db_query("ALTER TABLE notifications ADD COLUMN actor_id INT NULL AFTER type");
+            } catch (Throwable $e) { /* ignore */ }
+        }
+        if (!column_exists('notifications', 'data')) {
+            try {
+                db_query("ALTER TABLE notifications ADD COLUMN data JSON NULL AFTER actor_id");
+            } catch (Throwable $e) { /* ignore */ }
+        }
+        // Ensure last_notifications_seen_at on users
+        if (!column_exists('users', 'last_notifications_seen_at')) {
+            try {
+                db_query("ALTER TABLE users ADD COLUMN last_notifications_seen_at DATETIME NULL");
+            } catch (Throwable $e) { /* ignore */ }
+        }
+        return;
+    }
+
+    try {
+        db_query("CREATE TABLE notifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            ticket_id INT NULL,
+            type VARCHAR(50) NOT NULL DEFAULT 'info',
+            actor_id INT NULL,
+            data JSON NULL,
+            is_read TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_user (user_id),
+            INDEX idx_user_read (user_id, is_read),
+            INDEX idx_ticket (ticket_id),
+            INDEX idx_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Ensure last_notifications_seen_at on users
+        if (!column_exists('users', 'last_notifications_seen_at')) {
+            db_query("ALTER TABLE users ADD COLUMN last_notifications_seen_at DATETIME NULL");
+        }
+    } catch (Throwable $e) {
+        // Silently ignore — next page load will retry
+    }
+}
+
 // ── Create ───────────────────────────────────────────────────────────────────
 
 /**
@@ -197,6 +252,7 @@ function user_wants_notification(int $user_id, string $type): bool
  */
 function get_user_notifications(int $user_id, int $limit = 50, int $offset = 0): array
 {
+    ensure_notifications_table();
     if (!notifications_table_exists()) {
         return ['notifications' => [], 'unread_count' => 0];
     }

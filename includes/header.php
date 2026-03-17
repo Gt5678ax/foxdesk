@@ -49,19 +49,6 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
             inAppEnabled: <?php echo $in_app_notifications_enabled ? 'true' : 'false'; ?>,
             soundEnabled: <?php echo $in_app_sound_enabled ? 'true' : 'false'; ?>
         };
-        function quickStart(e) {
-            e.preventDefault();
-            fetch('index.php?page=api&action=quick-start', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': window.csrfToken}
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.url) window.location.href = data.url;
-                else if (data.error) alert(data.error);
-            })
-            .catch(function() { alert(<?php echo json_encode(t('Error')); ?>); });
-        }
         function sidebarToggleTimer(ticketId, isPaused) {
             var action = isPaused ? 'resume-timer' : 'pause-timer';
             var errLabel = <?php echo json_encode(t('Error')); ?>;
@@ -73,6 +60,28 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) {
+                    document.dispatchEvent(new Event('timerStateChanged'));
+                } else {
+                    if (typeof showAppToast === 'function') showAppToast(data.error || errLabel, 'error');
+                    else alert(data.error || errLabel);
+                }
+            })
+            .catch(function() {
+                if (typeof showAppToast === 'function') showAppToast(errLabel, 'error');
+                else alert(errLabel);
+            });
+        }
+        function sidebarStopTimer(ticketId) {
+            var errLabel = <?php echo json_encode(t('Error')); ?>;
+            fetch('index.php?page=api&action=stop-timer', {
+                method: 'POST',
+                headers: {'X-CSRF-TOKEN': window.csrfToken, 'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'ticket_id=' + ticketId
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    if (typeof showAppToast === 'function') showAppToast(data.message || <?php echo json_encode(t('Timer stopped.')); ?>, 'success');
                     document.dispatchEvent(new Event('timerStateChanged'));
                 } else {
                     if (typeof showAppToast === 'function') showAppToast(data.error || errLabel, 'error');
@@ -255,10 +264,9 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
                 </a>
                 <?php if ($has_quick_start): ?>
                 <div class="nav-item-flyout">
-                    <a href="#" onclick="quickStart(event)" class="nav-item-flyout__item">
+                    <a href="<?php echo url('new-ticket', ['auto_timer' => '1']); ?>" class="nav-item-flyout__item">
                         <?php echo get_icon('play', 'nav-item__icon'); ?>
-                        <span><?php echo e(t('Quick start')); ?></span>
-                        <span class="nav-item-flyout__hint"><?php echo e(t('Ticket + timer')); ?></span>
+                        <span><?php echo e(t('New ticket + timer')); ?></span>
                     </a>
                 </div>
                 </div>
@@ -309,6 +317,12 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
                                     style="color: var(--text-muted);"
                                     title="<?php echo $st_paused ? e(t('Resume')) : e(t('Pause')); ?>">
                                 <?php echo $st_paused ? get_icon('play', 'w-3 h-3') : get_icon('pause', 'w-3 h-3'); ?>
+                            </button>
+                            <button onclick="event.stopPropagation(); sidebarStopTimer(<?php echo (int)$stimer['ticket_id']; ?>)"
+                                    class="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                    style="color: var(--text-muted);"
+                                    title="<?php echo e(t('Stop timer')); ?>">
+                                <?php echo get_icon('stop', 'w-3 h-3'); ?>
                             </button>
                             <button onclick="event.stopPropagation(); if(typeof cancelTicket==='function') cancelTicket(<?php echo (int)$stimer['ticket_id']; ?>); else if(confirm('<?php echo e(t('Cancel ticket? The ticket will be deleted.')); ?>')) fetch('index.php?page=api&action=cancel-ticket',{method:'POST',headers:{'X-CSRF-TOKEN':window.csrfToken,'Content-Type':'application/x-www-form-urlencoded'},body:'ticket_id=<?php echo (int)$stimer['ticket_id']; ?>'}).then(function(r){return r.json()}).then(function(d){if(d.success)location.reload();else alert(d.error||'Error')});"
                                     class="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"

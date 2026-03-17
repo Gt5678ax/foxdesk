@@ -394,6 +394,29 @@ document.addEventListener('click', function(event) {
         .catch(function() { alert('Error'); });
     }
 
+    function stopTimer(ticketId) {
+        var apiUrl = (cfg.apiUrl || 'index.php?page=api') + '&action=stop-timer';
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {'X-CSRF-TOKEN': window.csrfToken, 'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'ticket_id=' + ticketId
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                if (typeof showAppToast === 'function') showAppToast(data.message || 'Timer stopped.', 'success');
+                document.dispatchEvent(new Event('timerStateChanged'));
+            } else {
+                if (typeof showAppToast === 'function') showAppToast(data.error || 'Error', 'error');
+                else alert(data.error || 'Error');
+            }
+        })
+        .catch(function() { alert('Error'); });
+    }
+
+    // Expose for PHP-rendered sidebar buttons
+    window.sidebarStopTimer = stopTimer;
+
     function buildTimerRow(t, pausedLabel) {
         var isPaused = t.is_paused;
         var wrapper = document.createElement('div');
@@ -468,6 +491,37 @@ document.addEventListener('click', function(event) {
             });
         });
         wrapper.appendChild(toggleBtn);
+
+        // Stop button (■) - saves the timer
+        var stopBtn = document.createElement('button');
+        stopBtn.className = 'flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity';
+        stopBtn.style.color = 'var(--text-muted)';
+        stopBtn.title = cfg.stopTimerLabel || 'Stop timer';
+        var stopSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        stopSvg.setAttribute('class', 'w-3 h-3');
+        stopSvg.setAttribute('viewBox', '0 0 24 24');
+        stopSvg.setAttribute('fill', 'none');
+        stopSvg.setAttribute('stroke', 'currentColor');
+        stopSvg.setAttribute('stroke-width', '2');
+        var stopRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        stopRect.setAttribute('x', '6');
+        stopRect.setAttribute('y', '6');
+        stopRect.setAttribute('width', '12');
+        stopRect.setAttribute('height', '12');
+        stopSvg.appendChild(stopRect);
+        stopBtn.appendChild(stopSvg);
+        stopBtn.addEventListener('mouseenter', function() {
+            stopBtn.style.color = 'var(--corp-danger, #ef4444)';
+        });
+        stopBtn.addEventListener('mouseleave', function() {
+            stopBtn.style.color = 'var(--text-muted)';
+        });
+        stopBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            stopTimer(t.ticket_id);
+        });
+        wrapper.appendChild(stopBtn);
 
         // Cancel button (✕)
         var btn = document.createElement('button');

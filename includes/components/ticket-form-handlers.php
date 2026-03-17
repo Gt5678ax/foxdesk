@@ -329,6 +329,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'created_at' => date('Y-m-d H:i:s')
             ]);
 
+            // Touch ticket so "Last updated" sorting works
+            db_query("UPDATE tickets SET updated_at = NOW() WHERE id = ?", [$ticket_id]);
+
             log_activity($ticket_id, $user['id'], 'commented', 'Comment added');
         }
 
@@ -473,6 +476,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'is_internal' => 0, // Customer can see this
                 'created_at' => date('Y-m-d H:i:s')
             ]);
+
+            // Touch ticket so "Last updated" sorting works
+            db_query("UPDATE tickets SET updated_at = NOW() WHERE id = ?", [$ticket_id]);
         }
 
         // Send notification

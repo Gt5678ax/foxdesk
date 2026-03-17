@@ -19,7 +19,10 @@
         pausedLabel: <?php echo json_encode(t('Paused')); ?>,
         activeTimersLabel: <?php echo json_encode(t('Active Timers')); ?>,
         cancelTicketConfirm: <?php echo json_encode(t('Cancel ticket? The ticket will be deleted.')); ?>,
-        cancelTicketTooltip: <?php echo json_encode(t('Cancel ticket')); ?>
+        cancelTicketTooltip: <?php echo json_encode(t('Cancel ticket')); ?>,
+        stopTimerLabel: <?php echo json_encode(t('Stop timer')); ?>,
+        pauseLabel: <?php echo json_encode(t('Pause')); ?>,
+        resumeLabel: <?php echo json_encode(t('Resume')); ?>
     };
 </script>
 <script>

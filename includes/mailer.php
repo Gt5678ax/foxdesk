@@ -422,10 +422,35 @@ function send_new_comment_notification($ticket, $comment, $commenter, $comment_i
 
     $recipients = [];
 
+    // Ticket owner (creator)
     if ($commenter['id'] != $ticket['user_id']) {
         $recipients[$ticket['user_id']] = ['type' => 'owner'];
     }
 
+    // Assigned agent
+    if (!empty($ticket['assignee_id']) && $ticket['assignee_id'] != $commenter['id']) {
+        if (!isset($recipients[$ticket['assignee_id']])) {
+            $recipients[(int)$ticket['assignee_id']] = ['type' => 'assignee'];
+        }
+    }
+
+    // Previous commenters (participants) — notify everyone who commented on this ticket
+    try {
+        $participants = db_fetch_all(
+            "SELECT DISTINCT user_id FROM ticket_comments WHERE ticket_id = ? AND user_id != ?",
+            [$ticket['id'], $commenter['id']]
+        );
+        foreach ($participants as $p) {
+            $pid = (int)$p['user_id'];
+            if ($pid > 0 && !isset($recipients[$pid])) {
+                $recipients[$pid] = ['type' => 'participant'];
+            }
+        }
+    } catch (Exception $e) {
+        // ignore — participants are optional
+    }
+
+    // CC users
     foreach ($cc_user_ids as $cc_id) {
         $cc_id = (int) $cc_id;
         if ($cc_id > 0 && $cc_id != $commenter['id']) {

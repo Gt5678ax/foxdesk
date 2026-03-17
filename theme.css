@@ -3022,7 +3022,7 @@ margin-left: 0.75rem;
 border-left: 2px solid transparent;
 }
 .nav-item-group:hover .nav-item-flyout {
-max-height: 80px;
+max-height: 140px;
 opacity: 1;
 padding: 4px 0 4px 0.75rem;
 border-left-color: var(--border-light, #e2e8f0);
@@ -3055,7 +3055,7 @@ padding: 0 0 0 0.75rem;
 border-left-color: transparent;
 }
 .nav-item-group.expanded .nav-item-flyout {
-max-height: 80px;
+max-height: 140px;
 opacity: 1;
 padding: 4px 0 4px 0.75rem;
 border-left-color: var(--border-light, #e2e8f0);

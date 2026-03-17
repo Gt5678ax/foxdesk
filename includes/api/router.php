@@ -67,6 +67,7 @@ function route_api_request($action) {
         'start-timer' => 'api_start_timer',
         'pause-timer' => 'api_pause_timer',
         'resume-timer' => 'api_resume_timer',
+        'stop-timer' => 'api_stop_timer',
         'discard-timer' => 'api_discard_timer',
         'cancel-ticket' => 'api_cancel_ticket',
         'delete-time-entry' => 'api_delete_time_entry',

@@ -99,21 +99,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Save time entry — manual duration takes priority over timer
             $timer_elapsed = (int) ($_POST['timer_elapsed_seconds'] ?? 0);
-            if (is_agent() && function_exists('ticket_time_table_exists') && ticket_time_table_exists() && function_exists('add_manual_time_entry')) {
-                $time_minutes = 0;
+            if (is_agent() && function_exists('ticket_time_table_exists') && ticket_time_table_exists()) {
                 if ($manual_duration_minutes > 0) {
-                    $time_minutes = $manual_duration_minutes;
+                    // Manual duration: log as completed time entry
+                    if (function_exists('add_manual_time_entry')) {
+                        add_manual_time_entry($ticket_id, $user['id'], [
+                            'started_at' => date('Y-m-d H:i:s', time() - ($manual_duration_minutes * 60)),
+                            'ended_at' => date('Y-m-d H:i:s'),
+                            'duration_minutes' => $manual_duration_minutes,
+                            'summary' => t('Ticket creation'),
+                            'is_billable' => 1,
+                        ]);
+                    }
                 } elseif ($timer_elapsed > 0) {
-                    $time_minutes = max(1, (int) round($timer_elapsed / 60));
-                }
-                if ($time_minutes > 0) {
-                    add_manual_time_entry($ticket_id, $user['id'], [
-                        'started_at' => date('Y-m-d H:i:s', time() - ($time_minutes * 60)),
-                        'ended_at' => date('Y-m-d H:i:s'),
-                        'duration_minutes' => $time_minutes,
-                        'summary' => t('Ticket creation'),
+                    // Timer was running — start a live DB timer backdated to when client timer started
+                    $org_billable_rate = 0.0;
+                    if (!empty($ticket['organization_id'] ?? null)) {
+                        $org = get_organization($ticket_id);
+                        $org_billable_rate = (float)($org['billable_rate'] ?? 0);
+                    }
+                    $user_cost_rate = (float)($user['cost_rate'] ?? 0);
+                    db_insert('ticket_time_entries', [
+                        'ticket_id' => $ticket_id,
+                        'user_id' => $user['id'],
+                        'started_at' => date('Y-m-d H:i:s', time() - $timer_elapsed),
+                        'ended_at' => null,
+                        'duration_minutes' => 0,
                         'is_billable' => 1,
+                        'billable_rate' => $org_billable_rate,
+                        'cost_rate' => $user_cost_rate,
+                        'is_manual' => 0,
+                        'created_at' => date('Y-m-d H:i:s')
                     ]);
+                    log_activity($ticket_id, $user['id'], 'time_started', 'Timer started');
                 }
             }
 
@@ -215,11 +233,6 @@ if (!empty($_POST['import_organization_id'])) {
     $posted_org_id = (int) $_POST['organization_id'];
     if ($posted_org_id > 0 && in_array($posted_org_id, $allowed_organization_ids, true)) {
         $default_organization_id = $posted_org_id;
-    }
-} elseif (!empty($user['organization_id'])) {
-    $candidate_org_id = (int) $user['organization_id'];
-    if (in_array($candidate_org_id, $allowed_organization_ids, true)) {
-        $default_organization_id = $candidate_org_id;
     }
 }
 

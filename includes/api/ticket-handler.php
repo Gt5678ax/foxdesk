@@ -288,6 +288,62 @@ function api_resume_timer() {
 }
 
 /**
+ * Stop timer for a ticket (AJAX) - ends timer and saves the logged time
+ */
+function api_stop_timer() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        api_error('Method not allowed', 405);
+    }
+
+    require_csrf_token(true);
+
+    $user = current_user();
+    if (!$user || (!is_agent() && !is_admin())) {
+        api_error('Unauthorized', 401);
+    }
+
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $ticket = get_ticket($ticket_id);
+
+    if (!$ticket) {
+        api_error('Ticket not found', 404);
+    }
+
+    if (!can_see_ticket($ticket, $user)) {
+        api_error('Forbidden', 403);
+    }
+
+    require_once BASE_PATH . '/includes/ticket-time-functions.php';
+
+    $active = get_active_ticket_timer($ticket_id, $user['id']);
+    if (!$active) {
+        api_error(t('No active timer found'), 400);
+    }
+
+    // Calculate duration accounting for pauses
+    $elapsed = calculate_timer_elapsed($active);
+    $duration = max(1, (int) floor($elapsed / 60));
+
+    db_update('ticket_time_entries', [
+        'ended_at' => date('Y-m-d H:i:s'),
+        'duration_minutes' => $duration,
+        'paused_at' => null
+    ], 'id = ?', [$active['id']]);
+
+    log_activity($ticket_id, $user['id'], 'time_stopped', "Timer stopped ({$duration} min)");
+    if (function_exists('log_ticket_history')) {
+        log_ticket_history($ticket_id, $user['id'], 'timer_stopped', null, date('Y-m-d H:i:s'));
+    }
+
+    api_success([
+        'success' => true,
+        'entry_id' => $active['id'],
+        'duration_minutes' => $duration,
+        'message' => t('Timer stopped.') . ' ' . format_duration_minutes($duration) . ' ' . t('logged.')
+    ]);
+}
+
+/**
  * Discard timer for a ticket (AJAX) - deletes without logging time
  */
 function api_discard_timer() {

@@ -204,6 +204,15 @@ function get_tickets($filters = []) {
             case 'due_date':
                 $order_by = "CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END, t.due_date ASC, t.created_at DESC";
                 break;
+            case 'last_updated':
+                $order_by = "t.updated_at DESC";
+                break;
+            case 'ticket_number':
+                $order_by = "t.id DESC";
+                break;
+            case 'ticket_number_asc':
+                $order_by = "t.id ASC";
+                break;
             default:
                 $order_by = "t.created_at DESC";
                 break;
@@ -370,13 +379,18 @@ function get_ticket_comments($ticket_id) {
  * Add comment to ticket
  */
 function add_comment($ticket_id, $user_id, $content, $is_internal = 0) {
-    return db_insert('comments', [
+    $id = db_insert('comments', [
         'ticket_id' => $ticket_id,
         'user_id' => $user_id,
         'content' => $content,
         'is_internal' => $is_internal,
         'created_at' => date('Y-m-d H:i:s')
     ]);
+
+    // Update ticket's updated_at so "Last updated" sorting works
+    db_query("UPDATE tickets SET updated_at = ? WHERE id = ?", [date('Y-m-d H:i:s'), $ticket_id]);
+
+    return $id;
 }
 
 

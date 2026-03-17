@@ -422,7 +422,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['verify_2fa'])) {
 
                     <div class="flex items-center justify-between mt-4">
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="remember_me" value="1"
+                            <input type="checkbox" name="remember_me" value="1" checked
                                 class="form-checkbox rounded" style="width: 16px; height: 16px;">
                             <span class="text-sm" style="color: var(--text-secondary);"><?php echo e(t('Remember me')); ?></span>
                         </label>

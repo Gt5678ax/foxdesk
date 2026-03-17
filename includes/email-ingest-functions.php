@@ -1404,7 +1404,7 @@ function email_ingest_add_inbound_comment($ticket_id, $user_id, $body_text)
     if ($content === '') {
         $content = '(No content)';
     }
-    return (int) db_insert('comments', [
+    $id = (int) db_insert('comments', [
         'ticket_id' => $ticket_id,
         'user_id' => $user_id,
         'content' => $content,
@@ -1412,6 +1412,11 @@ function email_ingest_add_inbound_comment($ticket_id, $user_id, $body_text)
         'time_spent' => 0,
         'created_at' => date('Y-m-d H:i:s'),
     ]);
+
+    // Touch ticket so "Last updated" sorting works
+    db_query("UPDATE tickets SET updated_at = NOW() WHERE id = ?", [$ticket_id]);
+
+    return $id;
 }
 
 /**

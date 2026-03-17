@@ -2507,7 +2507,7 @@ require_once BASE_PATH . '/includes/header.php';
                         timerStartTime = Math.floor(Date.now() / 1000);
                         pausedSeconds = 0;
                         setTimerState('running');
-                        document.dispatchEvent(new CustomEvent('timerStateChanged'));
+                        selfDispatch = true; document.dispatchEvent(new CustomEvent('timerStateChanged')); selfDispatch = false;
                         showToast(data.message || STR.started, 'success');
                     } else {
                         showToast(data.error || STR.failStart, 'error');
@@ -2529,7 +2529,7 @@ require_once BASE_PATH . '/includes/header.php';
                     const data = await timerAction('pause-timer');
                     if (data.success) {
                         setTimerState('paused', { elapsedSeconds: data.elapsed_seconds || 0 });
-                        document.dispatchEvent(new CustomEvent('timerStateChanged'));
+                        selfDispatch = true; document.dispatchEvent(new CustomEvent('timerStateChanged')); selfDispatch = false;
                         showToast(data.message || STR.pausedMsg, 'success');
                     } else {
                         showToast(data.error || STR.failPause, 'error');
@@ -2553,7 +2553,7 @@ require_once BASE_PATH . '/includes/header.php';
                         // Use server-returned paused_seconds (accumulated correctly)
                         pausedSeconds = data.paused_seconds || pausedSeconds;
                         setTimerState('running');
-                        document.dispatchEvent(new CustomEvent('timerStateChanged'));
+                        selfDispatch = true; document.dispatchEvent(new CustomEvent('timerStateChanged')); selfDispatch = false;
                         showToast(data.message || STR.resumedMsg, 'success');
                     } else {
                         showToast(data.error || STR.failResume, 'error');
@@ -2580,7 +2580,7 @@ require_once BASE_PATH . '/includes/header.php';
                 const data = await timerAction('discard-timer');
                 if (data.success) {
                     setTimerState('stopped');
-                    document.dispatchEvent(new CustomEvent('timerStateChanged'));
+                    selfDispatch = true; document.dispatchEvent(new CustomEvent('timerStateChanged')); selfDispatch = false;
                     showToast(data.message || STR.discardedMsg, 'success');
                 } else {
                     showToast(data.error || STR.failDiscard, 'error');
@@ -2599,6 +2599,37 @@ require_once BASE_PATH . '/includes/header.php';
         if (btnDiscard) btnDiscard.addEventListener('click', onDiscardClick);
         const toolbarTimerBtn = document.getElementById('toolbar-timer-btn');
         if (toolbarTimerBtn) toolbarTimerBtn.addEventListener('click', onTimerActionClick);
+
+        // ---- Sync timer state when sidebar changes it ----
+        let selfDispatch = false;
+        document.addEventListener('timerStateChanged', async function() {
+            if (selfDispatch) return; // ignore our own dispatches
+            try {
+                const r = await fetch('index.php?page=api&action=get_active_timers');
+                const data = await r.json();
+                if (!data.success) return;
+                const mine = (data.timers || []).find(t => t.ticket_id == ticketId);
+                if (mine) {
+                    if (mine.is_paused) {
+                        const elapsed = mine.elapsed_minutes * 60;
+                        pausedSeconds = mine.paused_seconds || 0;
+                        timerStartTime = mine.started_at;
+                        setTimerState('paused', { elapsedSeconds: elapsed });
+                    } else {
+                        timerStartTime = mine.started_at;
+                        pausedSeconds = mine.paused_seconds || 0;
+                        setTimerState('running');
+                    }
+                } else {
+                    // Timer for this ticket no longer active (stopped/discarded)
+                    if (currentState !== 'stopped') {
+                        setTimerState('stopped');
+                    }
+                }
+            } catch (e) {
+                // ignore fetch errors
+            }
+        });
 
         // ---- Start ticking if timer was running on page load ----
         if (currentState === 'running') {

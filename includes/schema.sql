@@ -43,6 +43,10 @@ CREATE TABLE IF NOT EXISTS users (
     reset_token VARCHAR(100),
     reset_token_expires DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    totp_secret VARCHAR(64) NULL,
+    totp_enabled TINYINT(1) DEFAULT 0,
+    totp_backup_codes TEXT NULL,
+    last_notifications_seen_at DATETIME NULL,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL,
     INDEX idx_email (email),
@@ -521,4 +525,23 @@ CREATE TABLE IF NOT EXISTS api_tokens (
     INDEX idx_user (user_id),
     INDEX idx_active (is_active),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    ticket_id INT NULL,
+    type VARCHAR(50) NOT NULL DEFAULT 'info',
+    actor_id INT NULL,
+    data JSON NULL,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
+    FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_user (user_id),
+    INDEX idx_user_read (user_id, is_read),
+    INDEX idx_ticket (ticket_id),
+    INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
