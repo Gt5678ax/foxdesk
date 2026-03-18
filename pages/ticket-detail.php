@@ -1211,15 +1211,31 @@ require_once BASE_PATH . '/includes/header.php';
     <div class="ticket-sidebar">
         <!-- Details -->
         <div class="card card-body">
-            <?php if (!empty($ticket['organization_name'])): ?>
-                    <div class="flex items-center gap-2 px-2.5 py-2 -mx-1 mb-2 rounded-lg"
-                        style="background: var(--primary-soft);">
-                        <span style="color: var(--primary);"><?php echo get_icon('building', 'w-4 h-4 flex-shrink-0'); ?></span>
-                        <span class="text-sm font-semibold truncate" style="color: var(--primary-dark);"
-                            title="<?php echo e($ticket['organization_name']); ?>">
-                            <?php echo e($ticket['organization_name']); ?>
-                        </span>
-                    </div>
+            <?php if (is_agent()): ?>
+                <?php $_sidebar_companies = db_fetch_all("SELECT id, name FROM organizations ORDER BY name"); ?>
+                <div class="flex items-center gap-2 px-2.5 py-1.5 -mx-1 mb-2 rounded-lg"
+                    style="background: var(--primary-soft);">
+                    <span style="color: var(--primary);"><?php echo get_icon('building', 'w-4 h-4 flex-shrink-0'); ?></span>
+                    <select class="text-sm font-semibold border-0 cursor-pointer w-full truncate py-0.5 px-0.5 rounded"
+                        style="color: var(--primary-dark); background: transparent;"
+                        onchange="quickEditField('quick-company', {organization_id: this.value})">
+                        <option value=""><?php echo e(t('-- No company --')); ?></option>
+                        <?php foreach ($_sidebar_companies as $_co): ?>
+                            <option value="<?php echo $_co['id']; ?>" <?php echo ($ticket['organization_id'] ?? 0) == $_co['id'] ? 'selected' : ''; ?>>
+                                <?php echo e($_co['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php elseif (!empty($ticket['organization_name'])): ?>
+                <div class="flex items-center gap-2 px-2.5 py-2 -mx-1 mb-2 rounded-lg"
+                    style="background: var(--primary-soft);">
+                    <span style="color: var(--primary);"><?php echo get_icon('building', 'w-4 h-4 flex-shrink-0'); ?></span>
+                    <span class="text-sm font-semibold truncate" style="color: var(--primary-dark);"
+                        title="<?php echo e($ticket['organization_name']); ?>">
+                        <?php echo e($ticket['organization_name']); ?>
+                    </span>
+                </div>
             <?php endif; ?>
             <dl class="space-y-3">
                 <div class="flex justify-between">
@@ -1507,21 +1523,6 @@ require_once BASE_PATH . '/includes/header.php';
                                     <?php endif; ?>
                                 </div>
 
-                                <!-- Company -->
-                                <div>
-                                    <label class="form-label-sm mb-0.5">
-                                        <?php echo get_icon('building', 'w-3 h-3 inline mr-1'); ?>        <?php echo e(t('Company')); ?>
-                                    </label>
-                                    <?php $companies = db_fetch_all("SELECT id, name FROM organizations ORDER BY name"); ?>
-                                    <select class="form-select text-sm py-1.5 w-full" onchange="quickEditField('quick-company', {organization_id: this.value})">
-                                        <option value=""><?php echo e(t('-- None --')); ?></option>
-                                        <?php foreach ($companies as $company): ?>
-                                                <option value="<?php echo $company['id']; ?>" <?php echo ($ticket['organization_id'] ?? 0) == $company['id'] ? 'selected' : ''; ?>>
-                                                    <?php echo e($company['name']); ?>
-                                                </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
                             </div>
 
                             <!-- Additional Fields (Ticket Access, Share Link, etc.) -->
