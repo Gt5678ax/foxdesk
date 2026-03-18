@@ -2175,8 +2175,21 @@ include BASE_PATH . '/includes/components/page-header.php';
             <?php endif; ?>
         </div>
 
+        <!-- Advanced Settings (collapsed by default) -->
+        <details class="group mt-4">
+            <summary class="flex items-center justify-between cursor-pointer py-2 px-3 rounded-lg text-xs font-medium transition"
+                style="color: var(--text-muted); background: var(--surface-secondary);">
+                <span class="flex items-center gap-2">
+                    <?php echo get_icon('cog', 'w-4 h-4'); ?>
+                    <?php echo e(t('Advanced settings')); ?>
+                </span>
+                <?php echo get_icon('chevron-down', 'w-4 h-4 group-open:rotate-180 transition-transform'); ?>
+            </summary>
+
+            <div class="mt-2 space-y-2">
+
         <!-- Pseudo-cron (Background Tasks) -->
-        <div class="card card-body mt-2">
+        <div class="card card-body">
             <h3 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted);">
                 <?php echo e(t('Background tasks')); ?>
             </h3>
@@ -2234,7 +2247,7 @@ include BASE_PATH . '/includes/components/page-header.php';
         </div>
 
         <!-- Application Updates Section (Manual Upload) -->
-        <div class="card card-body mt-2">
+        <div class="card card-body">
             <h3 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted);">
                 <?php echo e(t('Manual update')); ?>
             </h3>
@@ -2556,7 +2569,7 @@ include BASE_PATH . '/includes/components/page-header.php';
         </div>
 
         <!-- Upload Settings -->
-        <div class="card card-body mt-2">
+        <div class="card card-body">
             <h3 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted);">
                 <?php echo e(t('Upload settings')); ?>
             </h3>
@@ -2579,6 +2592,9 @@ include BASE_PATH . '/includes/components/page-header.php';
                 </button>
             </form>
         </div>
+
+            </div><!-- /.space-y-2 -->
+        </details><!-- /Advanced settings -->
 
     <?php elseif ($tab === 'logs'): ?>
         <?php
