@@ -1,190 +1,166 @@
-# FoxDesk
+<p align="center">
+  <a href="https://foxdesk.org">
+    <img src="https://foxdesk.org/logo.png" alt="FoxDesk Logo" width="80" />
+  </a>
+</p>
 
-Open-source helpdesk and ticketing system built with PHP, Tailwind CSS, and Alpine.js.
+<h1 align="center">FoxDesk</h1>
 
-**Website:** [foxdesk.org](https://foxdesk.org)
+<p align="center">
+  <strong>Helpdesk & time tracking — for your team and your AI agents.</strong><br/>
+  Self-hosted. Open-source. No per-agent fees, ever.
+</p>
 
----
+<p align="center">
+  <a href="https://github.com/lukashanes/foxdesk/releases/latest"><img src="https://img.shields.io/github/v/release/lukashanes/foxdesk?color=blue&label=latest" alt="Latest Release" /></a>
+  <a href="https://github.com/lukashanes/foxdesk/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0-green" alt="License" /></a>
+  <a href="https://github.com/lukashanes/foxdesk/stargazers"><img src="https://img.shields.io/github/stars/lukashanes/foxdesk?style=social" alt="GitHub Stars" /></a>
+  <img src="https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.1+" />
+  <img src="https://img.shields.io/badge/MySQL-8.0%2B-4479A1?logo=mysql&logoColor=white" alt="MySQL" />
+</p>
 
-## Features
-
-**Ticket Management**
-- Create, assign, comment, resolve, and archive tickets
-- Custom statuses, priorities, and ticket types
-- Tags, due dates, and organization assignment
-- Internal notes (agent-only) and public comments
-- Public ticket sharing via secure links with expiration
-- Bulk actions (status, priority, assignment)
-- Advanced filtering and full-text search
-- Edit history tracking on all fields
-
-**Time Tracking**
-- Built-in timers with start, pause, resume, stop
-- Quick Start mode for instant timer launch
-- Sidebar timer widget with global visibility
-- Manual time entry with descriptions
-- Billable vs. non-billable hours
-- Configurable rounding (0/15/30/60 min)
-- Cost rates per user, billing rates per organization
-- Time reports with PDF and CSV export
-
-**Notifications**
-- In-app notification center with full-page view
-- Notifications grouped by ticket
-- Header dropdown with real-time badge count
-- Dashboard notification widget
-- Email notifications for ticket events
-- Per-user notification preferences (email, in-app, sound)
-
-**Reporting & Analytics**
-- Report builder with date ranges and filters
-- Financial reports (billable, cost, profit)
-- Public shareable report links with expiration
-- Dashboard KPI cards and activity feed
-- User activity tracking (admin)
-
-**AI Agent Integration**
-- REST API for AI automation
-- Agent Connect page with system prompt generator
-- Bearer token authentication with usage tracking
-- Endpoints: create tickets, add comments, log time, list tickets
-
-**Email Integration**
-- IMAP email-to-ticket ingest with sender whitelist
-- SMTP notifications with customizable templates
-- CC/BCC recipients on ticket replies
-
-**User Roles**
-- **Admin** — Full access, settings, user management, reports, AI agents
-- **Agent** — Ticket handling, time tracking, internal notes
-- **Client** — Submit and view own tickets, reply
-
-**Organizations & Clients**
-- Organization management with contact info and billing rates
-- Client portal with limited ticket access
-- Multi-organization user assignment
-
-**Recurring Tasks**
-- Scheduled ticket creation (weekly, monthly, yearly, custom)
-- Configurable assignee, type, priority, organization
-
-**PWA Support**
-- Installable as desktop and mobile app
-- Dynamic app manifest with custom icons
-
-**Multi-language**
-- English, Czech, German, Spanish, Italian
-- Per-user language preference
-
-**Auto-Updates**
-- One-click update from admin panel
-- Automatic backup before each update
-- Manual ZIP upload for offline environments
-- Dual-source checking (foxdesk.org + GitHub)
-
-**More**
-- Dark mode with CSS variable theming
-- Responsive design (mobile, tablet, desktop)
-- Keyboard shortcuts
-- Pseudo-cron (works without system cron)
-- Remember-me persistent login
-- Allowed senders management for email ingest
+<p align="center">
+  <a href="https://foxdesk.org">Website</a> · <a href="https://foxdesk.org/features/">Features</a> · <a href="https://foxdesk.org/download/">Download</a> · <a href="https://github.com/lukashanes/foxdesk/discussions">Discussions</a>
+</p>
 
 ---
 
-## Requirements
+<!-- Replace with an actual GIF or screenshot. Ideal: 800×450px animated GIF showing the dashboard, creating a ticket, and timer running. -->
+<p align="center">
+  <a href="https://foxdesk.org">
+    <img src="https://cdn.foxdesk.org/screens/ticket-detail-dark.png" alt="FoxDesk Screenshot" width="720" />
+  </a>
+</p>
 
-| Requirement | Minimum |
-|-------------|---------|
-| PHP         | 8.1     |
-| MySQL       | 5.7+ / MariaDB 10.2+ |
-| Disk space  | 50 MB   |
+## Why FoxDesk?
 
-Required PHP extensions: `pdo_mysql`, `mbstring`, `json`, `openssl`
+Most helpdesks charge **per seat, per month**. FoxDesk is different:
 
----
+| | FoxDesk | Zendesk | Freshdesk | osTicket |
+|---|:---:|:---:|:---:|:---:|
+| **Price** | Free forever | $19–115/agent/mo | $15–79/agent/mo | Free |
+| **Time Tracking** | ✅ Built-in | ❌ Add-on | ❌ Add-on | ❌ No |
+| **AI Agent API** | ✅ Native | ❌ No | ❌ No | ❌ No |
+| **Self-hosted** | ✅ | ❌ | ❌ | ✅ |
+| **Install time** | 5 minutes | — | — | 30+ min |
+| **No Docker/Node** | ✅ PHP only | — | — | ✅ |
 
-## Quick Start
+**Your AI agents are doing real work. FoxDesk lets them report it.**
 
-1. Upload files to your web server
-2. Create a MySQL database
-3. Copy `config.example.php` to `config.php` and edit credentials
-4. Open `https://your-domain.tld/install.php`
-5. Follow the installer (database setup + admin account)
-6. Delete `install.php`
-7. Log in and start using FoxDesk
+## ⚡ 5-Minute Install
 
-See [INSTALL.md](INSTALL.md) for detailed instructions including shared hosting, VPS, Nginx, cron jobs, and email setup.
-
----
-
-## Tech Stack
-
-- **Backend:** PHP 8.1+ (no framework)
-- **Database:** MySQL / MariaDB
-- **Frontend:** Tailwind CSS, Alpine.js
-- **Styling:** Custom `theme.css` with dark mode support
-
----
-
-## Project Structure
-
-```
-index.php              Entry point and router
-config.example.php     Configuration template
-install.php            Web installer
-upgrade.php            Database migration tool
-rescue.php             Emergency recovery
-theme.css              Custom styles + dark mode
-tailwind.min.css       Tailwind CSS
-version.json           Version info for auto-updates
-assets/js/             JavaScript modules
-includes/              Core PHP (auth, DB, functions, API, languages)
-includes/api/          REST API handlers
-includes/components/   Reusable UI components
-includes/lang/         Translation files
-pages/                 Page controllers
-pages/admin/           Admin panel pages
-bin/                   CLI scripts (cron, email ingest, maintenance)
-```
-
----
-
-## Cron Jobs
+No Docker. No Node. No build pipeline. Upload to any PHP host and run the wizard.
 
 ```bash
-# Email ingest (every 5 min, if IMAP enabled)
-*/5 * * * * php /path/to/bin/ingest-emails.php
+# 1. Download
+wget https://github.com/lukashanes/foxdesk/releases/latest/download/foxdesk.zip
 
-# Recurring tasks (hourly)
-0 * * * * php /path/to/bin/process-recurring-tasks.php
+# 2. Extract & upload to your web server
+unzip foxdesk.zip
 
-# Maintenance (daily)
-0 3 * * * php /path/to/bin/run-maintenance.php
+# 3. Open in browser
+# → https://your-domain.tld/install.php
+# → Follow the wizard (DB credentials + admin account)
+# → Done. Start resolving tickets.
 ```
 
-FoxDesk also includes a **pseudo-cron** system that runs tasks on page load, so cron jobs are optional on shared hosting.
+Works on: DigitalOcean, Hetzner, AWS, any shared hosting (cPanel, DirectAdmin), VPS.
+
+📖 [Detailed install guide →](https://foxdesk.org/installation/shared-hosting/)
+
+## 🎯 Key Features
+
+### Tickets
+Create, assign, resolve, and archive. Email-to-ticket via IMAP. Collision detection. Rich text with drag-and-drop attachments. Bulk actions. Full-text search. Public sharing via secure links.
+
+### Time Tracking & Billing
+Built-in timers with start/pause/resume. Billable vs. non-billable hours. Cost rates per user, billing rates per organization. Profitability reports. PDF & CSV export.
+
+### AI Agent Integration
+Give Claude, GPT, Cursor, or your custom bots their own accounts. They create tickets, post updates, and **log their own hours** — through a dead-simple REST API:
+
+```bash
+# Your AI agent logs 45 minutes of work
+curl -X POST https://your-domain.tld/api/agent-log-time \
+  -H "Authorization: Bearer fd_live_abc123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ticket_id": 542,
+    "minutes": 45,
+    "description": "Automated security scan completed. 3 issues found and patched.",
+    "billable": true
+  }'
+```
+
+The **Agent Connect** page generates a ready-to-use system prompt for any AI model — copy, paste, done.
+
+### Reports & Analytics
+Report builder with date ranges, filters, and KPI dashboards. Financial reports showing billable hours, costs, and profit margins. Shareable report links with expiration.
+
+### And more…
+🌍 **5 languages** — EN, CS, DE, ES, IT (per-user preference)
+🌙 **Dark mode** — auto-adapts to your OS
+📱 **PWA** — install as native app on desktop & mobile
+🔄 **Recurring tasks** — scheduled ticket creation
+🔔 **Granular notifications** — per-ticket, per-user, email + in-app
+🏢 **Organizations** — multi-org with custom billing rates
+🔒 **Roles** — Admin, Agent, Client with granular permissions
+
+## 🏗 Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | PHP 8.1+ (no framework) |
+| Database | MySQL 8.0+ / MariaDB 10.5+ |
+| Frontend | Tailwind CSS + Alpine.js |
+| Theming | CSS variables with dark mode |
+
+## 📁 Project Structure
+
+```
+index.php              → Entry point & router
+install.php            → Web installer
+config.example.php     → Configuration template
+includes/              → Core PHP (auth, DB, API, i18n)
+includes/api/          → REST API handlers
+pages/                 → Page controllers
+pages/admin/           → Admin panel
+assets/js/             → JavaScript modules
+bin/                   → CLI scripts (cron, email, maintenance)
+```
+
+## ⏰ Cron Jobs (optional)
+
+FoxDesk includes a **pseudo-cron** that runs on page load — no system cron required on shared hosting.
+
+```cron
+*/5 * * * * php /path/to/bin/ingest-emails.php       # Email ingestion
+0   * * * * php /path/to/bin/process-recurring-tasks.php  # Recurring tasks
+0   3 * * * php /path/to/bin/run-maintenance.php      # Daily maintenance
+```
+
+## 🤝 Contributing
+
+FoxDesk is open to contributions! Check [Issues](https://github.com/lukashanes/foxdesk/issues), open a [Discussion](https://github.com/lukashanes/foxdesk/discussions), or submit a PR.
+
+## 📜 License
+
+[AGPL-3.0](LICENSE.md) — free as in freedom.
+
+## 🔗 Links
+
+- 🌐 [foxdesk.org](https://foxdesk.org) — Website & docs
+- 📦 [Download](https://foxdesk.org/download/) — Latest release
+- 💬 [Discussions](https://github.com/lukashanes/foxdesk/discussions) — Community
+- 🐛 [Issues](https://github.com/lukashanes/foxdesk/issues) — Bug reports
+- 🐦 [Follow @lukhanes](https://x.com/lukhanes) — Updates & building in public
 
 ---
 
-## API
+<p align="center">
+  <strong>If FoxDesk helps you, give it a ⭐ — it helps others find it too.</strong>
+</p>
 
-FoxDesk includes a REST API for automation and AI agent integrations.
-
-**Endpoints:**
-- `POST agent-create-ticket` — Create tickets
-- `POST agent-add-comment` — Add comments
-- `POST agent-log-time` — Log time entries
-- `GET agent-list-tickets` — List and filter tickets
-
-Authentication via Bearer token (generated in Admin > Users > AI Agents).
-
-The **Agent Connect** page provides a ready-to-use system prompt and API documentation for connecting AI models.
-
----
-
-## License
-
-GNU Affero General Public License v3 (AGPL-3.0). See [LICENSE.md](LICENSE.md).
-
-Created by [Lukas Hanes](https://lukashanes.com).
+<p align="center">
+  Created by <a href="https://lukashanes.com">Lukas Hanes</a> · Built with ❤️ in Prague
+</p>
