@@ -31,7 +31,7 @@
 
 <p align="center">
   <a href="https://foxdesk.org">
-    <img src="https://cdn.foxdesk.org/screens/FoxDesk__mini.gif" alt="FoxDesk Demo" width="1280" />
+    <img src="https://cdn.foxdesk.org/screens/FoxDesk__mini.gif?v=2" alt="FoxDesk Demo" width="1280" />
   </a>
 </p>
 
