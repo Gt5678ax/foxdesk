@@ -307,6 +307,7 @@ return [
     'No notifications' => 'Žádná oznámení',
     'Action required' => 'Vyžaduje akci',
     'Informational' => 'Informativní',
+    'Resolved' => 'Vyřízené',
     'Mark as read' => 'Označit jako přečtené',
     'Load more' => 'Načíst více',
     'All' => 'Vše',
@@ -1161,6 +1162,17 @@ return [
     'due date' => 'termín',
     'type' => 'typ',
     'company' => 'firma',
+
+    // Link preview cards
+    'Google Drive file' => 'Soubor Google Drive',
+    'Google Docs' => 'Google Docs',
+    'Google Sheets' => 'Google Sheets',
+    'Google Slides' => 'Google Slides',
+    'Dropbox file' => 'Soubor Dropbox',
+    'YouTube video' => 'YouTube video',
+    'OneDrive file' => 'Soubor OneDrive',
+    'Figma design' => 'Figma design',
+    'Image' => 'Obrázek',
 ];
 
 

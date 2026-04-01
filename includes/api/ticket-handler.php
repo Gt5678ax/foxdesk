@@ -72,6 +72,11 @@ function api_change_status() {
         ]);
     }
 
+    // Auto-resolve action notifications if ticket is now closed
+    if (!empty($new_status['is_closed']) && function_exists('resolve_action_notifications')) {
+        resolve_action_notifications($ticket_id);
+    }
+
     api_success(['status' => $new_status]);
 }
 
@@ -479,6 +484,11 @@ function api_quick_assign() {
         }
     } else {
         log_activity($ticket_id, $user['id'], 'unassigned', "Assignment removed");
+    }
+
+    // Resolve old assignee's action notifications on reassign
+    if ($old_assignee_id && function_exists('resolve_action_notifications')) {
+        resolve_action_notifications($ticket_id, (int)$old_assignee_id);
     }
 
     api_success(['message' => t('Ticket updated.')]);

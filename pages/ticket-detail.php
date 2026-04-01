@@ -37,10 +37,9 @@ if (!can_see_ticket($ticket, $user)) {
     redirect('tickets');
 }
 
-// Auto mark notification as read when arriving from a notification link
-$nid = isset($_GET['nid']) ? (int) $_GET['nid'] : 0;
-if ($nid > 0 && function_exists('mark_notification_read')) {
-    mark_notification_read($nid, (int) $user['id']);
+// Auto mark ALL notifications for this ticket as read when viewing it
+if (function_exists('mark_ticket_notifications_read')) {
+    mark_ticket_notifications_read($ticket_id, (int) $user['id']);
 }
 
 $page_title = $ticket['title'];
@@ -300,6 +299,105 @@ require_once BASE_PATH . '/includes/header.php';
     .rich-content img {
         max-width: 100%;
         height: auto;
+    }
+
+    /* ── Link preview cards ──────────────────────────────────────────────── */
+    .link-preview-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        margin: 8px 0;
+        border: 1px solid var(--border-light, #e2e8f0);
+        border-radius: 10px;
+        background: var(--surface-secondary, #f8fafc);
+        text-decoration: none !important;
+        color: inherit;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        max-width: 480px;
+        overflow: hidden;
+    }
+    .link-preview-card:hover {
+        border-color: var(--primary, #3b82f6);
+        box-shadow: 0 2px 8px rgba(59,130,246,0.08);
+    }
+    .lp-thumb {
+        flex-shrink: 0;
+        display: block;
+        width: 64px;
+        height: 48px;
+        border-radius: 6px;
+        overflow: hidden;
+        background: var(--surface-tertiary, #e2e8f0);
+    }
+    .lp-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .lp-youtube .lp-thumb {
+        width: 120px;
+        height: 68px;
+        position: relative;
+    }
+    .lp-youtube .lp-thumb::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 32px;
+        height: 32px;
+        background: rgba(0,0,0,0.7);
+        border-radius: 50%;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 16px;
+    }
+    .lp-image .lp-thumb {
+        width: 120px;
+        height: 80px;
+    }
+    .lp-info {
+        flex: 1;
+        min-width: 0;
+        display: block;
+    }
+    .lp-title {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        line-height: 1.4;
+    }
+    .lp-service {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 3px;
+        font-size: 0.75rem;
+        color: var(--text-muted, #6b7280);
+    }
+    .lp-service svg {
+        flex-shrink: 0;
+    }
+    [data-theme="dark"] .link-preview-card {
+        background: var(--surface-tertiary, #1e293b);
+        border-color: var(--border-dark, #334155);
+    }
+    [data-theme="dark"] .link-preview-card:hover {
+        border-color: var(--primary, #3b82f6);
+    }
+    [data-theme="dark"] .lp-thumb {
+        background: var(--surface-secondary, #334155);
+    }
+    @media (max-width: 640px) {
+        .link-preview-card { max-width: 100%; }
+        .lp-youtube .lp-thumb { width: 80px; height: 45px; }
     }
 
     /* Dark mode support for Quill editors */
@@ -3077,25 +3175,33 @@ require_once BASE_PATH . '/includes/header.php';
 
 <!-- Quill Editor JS (1.3.7 stable) -->
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="assets/js/quill-image-upload.js?v=<?php echo APP_VERSION; ?>"></script>
 <script>
     // Quill toolbar configuration
     const quillToolbar = [
         [{ 'header': [1, 2, 3, false] }],
         ['bold', 'italic', 'underline', 'strike'],
         [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        ['link'],
+        ['link', 'image'],
         ['clean']
     ];
 
     // Initialize Comment Editor
     let commentEditor = null;
     const commentEditorEl = document.getElementById('comment-editor');
+    var _quillUploadOpts = {
+        uploadUrl: window.appConfig ? window.appConfig.apiUrl + '&action=upload' : 'index.php?page=api&action=upload',
+        csrfToken: window.csrfToken || '',
+        ticketId: <?php echo (int) $ticket_id; ?>
+    };
+
     if (commentEditorEl) {
         commentEditor = new Quill('#comment-editor', {
             theme: 'snow',
             placeholder: '<?php echo e(t('Write a reply...')); ?>',
             modules: { toolbar: quillToolbar }
         });
+        if (window.initQuillImageUpload) initQuillImageUpload(commentEditor, _quillUploadOpts);
     }
 
     // Initialize Internal Note Editor (for agents)
@@ -3107,6 +3213,7 @@ require_once BASE_PATH . '/includes/header.php';
             placeholder: '<?php echo e(t('Internal note for agents...')); ?>',
             modules: { toolbar: quillToolbar }
         });
+        if (window.initQuillImageUpload) initQuillImageUpload(internalEditor, _quillUploadOpts);
     }
 
     // Sync Quill content to hidden inputs on form submit
@@ -3173,6 +3280,7 @@ require_once BASE_PATH . '/includes/header.php';
                     placeholder: '<?php echo e(t('Description...')); ?>',
                     modules: { toolbar: quillToolbar }
                 });
+                if (window.initQuillImageUpload) initQuillImageUpload(editDescriptionEditor, _quillUploadOpts);
 
                 // Load existing content
                 const existingContent = document.getElementById('edit-description-input').value;

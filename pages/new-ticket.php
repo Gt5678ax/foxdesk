@@ -961,6 +961,7 @@ include BASE_PATH . '/includes/components/page-header.php';
 <!-- Quill 1.3.7 (stable version) -->
 <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="assets/js/quill-image-upload.js?v=<?php echo APP_VERSION; ?>"></script>
 <script>
     // Initialize Quill Editor
     (function() {
@@ -984,11 +985,19 @@ include BASE_PATH . '/includes/components/page-header.php';
                         [{ 'header': [1, 2, 3, false] }],
                         ['bold', 'italic', 'underline', 'strike'],
                         [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        ['link'],
+                        ['link', 'image'],
                         ['clean']
                     ]
                 }
             });
+
+            // Enable image paste/drop upload
+            if (window.initQuillImageUpload) {
+                initQuillImageUpload(window.descriptionEditor, {
+                    uploadUrl: 'index.php?page=api&action=upload',
+                    csrfToken: window.csrfToken || ''
+                });
+            }
 
             // Load existing content if any
             const existingContent = document.getElementById('description-input').value;

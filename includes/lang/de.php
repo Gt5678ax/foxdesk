@@ -304,6 +304,7 @@ return [
     'No notifications' => 'Keine Benachrichtigungen',
     'Action required' => 'Aktion erforderlich',
     'Informational' => 'Informativ',
+    'Resolved' => 'Erledigt',
     'Mark as read' => 'Als gelesen markieren',
     'Load more' => 'Mehr laden',
     'All' => 'Alle',
@@ -1162,6 +1163,17 @@ return [
     'due date' => 'Fälligkeitsdatum',
     'type' => 'Typ',
     'company' => 'Firma',
+
+    // Link preview cards
+    'Google Drive file' => 'Google Drive Datei',
+    'Google Docs' => 'Google Docs',
+    'Google Sheets' => 'Google Sheets',
+    'Google Slides' => 'Google Slides',
+    'Dropbox file' => 'Dropbox Datei',
+    'YouTube video' => 'YouTube Video',
+    'OneDrive file' => 'OneDrive Datei',
+    'Figma design' => 'Figma Design',
+    'Image' => 'Bild',
 ];
 
 

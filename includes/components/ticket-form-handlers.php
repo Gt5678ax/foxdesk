@@ -241,6 +241,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'new_status' => $new_status['name'] ?? '',
                     ]);
                 }
+
+                // Auto-resolve action notifications if ticket is now closed
+                if (!empty($new_status['is_closed']) && function_exists('resolve_action_notifications')) {
+                    resolve_action_notifications($ticket_id);
+                }
             }
         }
 
@@ -444,6 +449,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
 
+        // If assignee is commenting, resolve their action-required notifications
+        if ($comment_id && !empty($ticket['assignee_id']) && (int)$ticket['assignee_id'] === (int)$user['id']
+            && function_exists('resolve_action_notifications')) {
+            resolve_action_notifications($ticket_id, (int)$user['id']);
+        }
+
         // Flash message based on what was done
         if (!empty($content)) {
             flash(t('Comment added.'), 'success');
@@ -493,6 +504,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
 
+        // Auto-resolve action notifications if ticket is now closed
+        if (!empty($new_status['is_closed']) && function_exists('resolve_action_notifications')) {
+            resolve_action_notifications($ticket_id);
+        }
+
         flash(t('Status updated.'), 'success');
         redirect('ticket', ['id' => $ticket_id]);
     }
@@ -520,6 +536,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 dispatch_ticket_notifications('assigned_to_you', $ticket_id, $user['id'], [
                     'assignee_id' => $assignee_id,
                 ]);
+            }
+
+            // Resolve old assignee's action notifications on reassign
+            if ($old_assignee_id && function_exists('resolve_action_notifications')) {
+                resolve_action_notifications($ticket_id, (int)$old_assignee_id);
             }
 
             flash(t('Ticket assigned.'), 'success');

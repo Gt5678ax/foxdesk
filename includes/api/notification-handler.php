@@ -44,6 +44,7 @@ function api_get_notifications()
             'type'             => $n['type'],
             'ticket_id'        => $n['ticket_id'] ? (int) $n['ticket_id'] : null,
             'is_read'          => (bool) $n['is_read'],
+            'is_resolved'      => (bool) ($n['is_resolved'] ?? false),
             'created_at'       => $n['created_at'],
             'time_ago'         => notification_time_ago($n['created_at']),
             'formatted_text'   => format_notification_text($n),

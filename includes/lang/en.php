@@ -311,6 +311,7 @@ return [
     'No notifications' => 'No notifications',
     'Action required' => 'Action required',
     'Informational' => 'Informational',
+    'Resolved' => 'Resolved',
     'Mark as read' => 'Mark as read',
     'Load more' => 'Load more',
     'All' => 'All',
@@ -1161,6 +1162,17 @@ return [
     'due date' => 'due date',
     'type' => 'type',
     'company' => 'company',
+
+    // Link preview cards
+    'Google Drive file' => 'Google Drive file',
+    'Google Docs' => 'Google Docs',
+    'Google Sheets' => 'Google Sheets',
+    'Google Slides' => 'Google Slides',
+    'Dropbox file' => 'Dropbox file',
+    'YouTube video' => 'YouTube video',
+    'OneDrive file' => 'OneDrive file',
+    'Figma design' => 'Figma design',
+    'Image' => 'Image',
 ];
 
 

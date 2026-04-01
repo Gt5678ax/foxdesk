@@ -302,6 +302,7 @@ return [
     'No notifications' => 'Nessuna notifica',
     'Action required' => 'Azione richiesta',
     'Informational' => 'Informativa',
+    'Resolved' => 'Risolte',
     'Mark as read' => 'Segna come letta',
     'Load more' => 'Carica altro',
     'All' => 'Tutte',
@@ -1162,6 +1163,17 @@ return [
     'due date' => 'scadenza',
     'type' => 'tipo',
     'company' => 'azienda',
+
+    // Link preview cards
+    'Google Drive file' => 'File Google Drive',
+    'Google Docs' => 'Google Docs',
+    'Google Sheets' => 'Google Sheets',
+    'Google Slides' => 'Google Slides',
+    'Dropbox file' => 'File Dropbox',
+    'YouTube video' => 'Video YouTube',
+    'OneDrive file' => 'File OneDrive',
+    'Figma design' => 'Design Figma',
+    'Image' => 'Immagine',
 ];
 
 

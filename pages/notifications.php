@@ -13,9 +13,9 @@ if (file_exists(BASE_PATH . '/includes/notification-functions.php')) {
     require_once BASE_PATH . '/includes/notification-functions.php';
 }
 
-// Filter: all | action | info
+// Filter: all | action | info | resolved
 $filter = $_GET['filter'] ?? 'all';
-if (!in_array($filter, ['all', 'action', 'info'])) {
+if (!in_array($filter, ['all', 'action', 'info', 'resolved'])) {
     $filter = 'all';
 }
 
@@ -23,7 +23,9 @@ if (!in_array($filter, ['all', 'action', 'info'])) {
 $all_notifications = [];
 $unread_count = 0;
 if (function_exists('notifications_table_exists') && notifications_table_exists()) {
-    $result = get_user_notifications((int) $user['id'], 50, 0);
+    // For "resolved" filter, include resolved notifications; otherwise exclude them
+    $exclude_resolved = ($filter !== 'resolved');
+    $result = get_user_notifications((int) $user['id'], 50, 0, $exclude_resolved);
     $all_notifications = $result['notifications'];
     $unread_count = $result['unread_count'];
 }
@@ -33,8 +35,10 @@ $notifications = [];
 foreach ($all_notifications as $n) {
     $data = $n['data'] ?? [];
     $is_action = is_action_required_notification($n['type'], $data);
+    $is_resolved = !empty($n['is_resolved']);
     if ($filter === 'action' && !$is_action) continue;
     if ($filter === 'info' && $is_action) continue;
+    if ($filter === 'resolved' && !$is_resolved) continue;
     $notifications[] = $n;
 }
 
@@ -641,6 +645,10 @@ function render_child_card(array $notif): void
         <a href="<?php echo url('notifications', ['filter' => 'info']); ?>"
            class="notif-filter-tab <?php echo $filter === 'info' ? 'active' : ''; ?>">
             <?php echo e(t('Informational')); ?>
+        </a>
+        <a href="<?php echo url('notifications', ['filter' => 'resolved']); ?>"
+           class="notif-filter-tab <?php echo $filter === 'resolved' ? 'active' : ''; ?>">
+            <?php echo e(t('Resolved')); ?>
         </a>
     </div>
 

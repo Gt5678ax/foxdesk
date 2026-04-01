@@ -45,6 +45,17 @@ function ensure_notifications_table(): void
                 db_query("ALTER TABLE notifications ADD COLUMN data JSON NULL AFTER actor_id");
             } catch (Throwable $e) { /* ignore */ }
         }
+        if (!column_exists('notifications', 'is_resolved')) {
+            try {
+                db_query("ALTER TABLE notifications ADD COLUMN is_resolved TINYINT(1) NOT NULL DEFAULT 0 AFTER is_read");
+                // One-time: resolve stale action notifications for already-closed tickets
+                db_execute("UPDATE notifications n JOIN tickets t ON n.ticket_id = t.id
+                    JOIN statuses s ON t.status_id = s.id
+                    SET n.is_resolved = 1
+                    WHERE s.is_closed = 1 AND n.is_resolved = 0
+                    AND n.type IN ('assigned_to_you','due_date_reminder')");
+            } catch (Throwable $e) { /* ignore */ }
+        }
         // Ensure last_notifications_seen_at on users
         if (!column_exists('users', 'last_notifications_seen_at')) {
             try {
@@ -63,6 +74,7 @@ function ensure_notifications_table(): void
             actor_id INT NULL,
             data JSON NULL,
             is_read TINYINT(1) NOT NULL DEFAULT 0,
+            is_resolved TINYINT(1) NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_user (user_id),
             INDEX idx_user_read (user_id, is_read),
@@ -250,19 +262,22 @@ function user_wants_notification(int $user_id, string $type): bool
  *
  * @return array ['notifications' => [...], 'unread_count' => int]
  */
-function get_user_notifications(int $user_id, int $limit = 50, int $offset = 0): array
+function get_user_notifications(int $user_id, int $limit = 50, int $offset = 0, bool $exclude_resolved = true): array
 {
     ensure_notifications_table();
     if (!notifications_table_exists()) {
         return ['notifications' => [], 'unread_count' => 0];
     }
 
+    $resolved_filter = ($exclude_resolved && column_exists('notifications', 'is_resolved'))
+        ? 'AND (n.is_resolved = 0 OR n.is_resolved IS NULL)' : '';
+
     $rows = db_fetch_all(
         "SELECT n.*, u.first_name AS actor_first_name, u.last_name AS actor_last_name,
                 u.avatar AS actor_avatar, u.email AS actor_email
          FROM notifications n
          LEFT JOIN users u ON u.id = n.actor_id
-         WHERE n.user_id = ?
+         WHERE n.user_id = ? $resolved_filter
          ORDER BY n.created_at DESC
          LIMIT ? OFFSET ?",
         [$user_id, $limit, $offset]
@@ -280,26 +295,20 @@ function get_user_notifications(int $user_id, int $limit = 50, int $offset = 0):
 }
 
 /**
- * Count notifications newer than last_notifications_seen_at (badge number).
+ * Count unread, non-resolved notifications (badge number).
  */
 function get_unread_notification_count(int $user_id): int
 {
     if (!notifications_table_exists()) return 0;
 
-    $user = db_fetch_one("SELECT last_notifications_seen_at FROM users WHERE id = ?", [$user_id]);
-    $seen_at = $user['last_notifications_seen_at'] ?? null;
+    $resolved_filter = column_exists('notifications', 'is_resolved')
+        ? 'AND is_resolved = 0' : '';
 
-    if ($seen_at) {
-        $row = db_fetch_one(
-            "SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = ? AND created_at > ?",
-            [$user_id, $seen_at]
-        );
-    } else {
-        $row = db_fetch_one(
-            "SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = ? AND is_read = 0",
-            [$user_id]
-        );
-    }
+    $row = db_fetch_one(
+        "SELECT COUNT(*) AS cnt FROM notifications
+         WHERE user_id = ? AND is_read = 0 $resolved_filter",
+        [$user_id]
+    );
 
     return (int) ($row['cnt'] ?? 0);
 }
@@ -347,6 +356,38 @@ function mark_all_notifications_read(int $user_id): bool
     db_update('notifications', ['is_read' => 1], 'user_id = ? AND is_read = 0', [$user_id]);
     db_update('users', ['last_notifications_seen_at' => $now], 'id = ?', [$user_id]);
     return true;
+}
+
+/**
+ * Resolve action-required notifications for a ticket.
+ * Called when the underlying action is completed (ticket closed, assignee responded, reassigned).
+ *
+ * @param int      $ticket_id
+ * @param int|null $user_id   If set, only resolve for this user. If null, resolve for all users.
+ */
+function resolve_action_notifications(int $ticket_id, ?int $user_id = null): void
+{
+    if (!notifications_table_exists()) return;
+    if (!column_exists('notifications', 'is_resolved')) return;
+
+    $params = [$ticket_id];
+    $user_filter = '';
+    if ($user_id !== null) {
+        $user_filter = 'AND user_id = ?';
+        $params[] = $user_id;
+    }
+
+    try {
+        db_execute(
+            "UPDATE notifications SET is_resolved = 1
+             WHERE ticket_id = ? AND is_resolved = 0 $user_filter
+             AND (type IN ('assigned_to_you', 'due_date_reminder')
+                  OR (type = 'new_comment' AND JSON_EXTRACT(data, '$.action_required') = true))",
+            $params
+        );
+    } catch (Throwable $e) {
+        // Silent — don't break the main flow
+    }
 }
 
 /**

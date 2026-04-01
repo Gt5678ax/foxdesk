@@ -31,9 +31,23 @@ function safe_html($html)
 {
     if (empty($html)) return '';
 
-    // Allow only safe HTML tags
-    $allowed_tags = '<p><br><strong><b><em><i><u><s><strike><h1><h2><h3><h4><h5><h6><ul><ol><li><a><blockquote><pre><code><span><div>';
+    // Allow only safe HTML tags (img allowed for uploaded images)
+    $allowed_tags = '<p><br><strong><b><em><i><u><s><strike><h1><h2><h3><h4><h5><h6><ul><ol><li><a><img><blockquote><pre><code><span><div>';
     $clean = strip_tags($html, $allowed_tags);
+
+    // Sanitize <img> tags — only allow src with safe URLs (no base64 data URIs)
+    $clean = preg_replace_callback('/<img\s+([^>]*)>/i', function($matches) {
+        $attrs = $matches[1];
+        if (preg_match('/src\s*=\s*["\']([^"\']+)["\']/i', $attrs, $srcMatch)) {
+            $src = $srcMatch[1];
+            // Allow relative URLs (image.php?f=...) and https:// URLs, block data: URIs
+            if (preg_match('/^(https?:|image\.php|uploads\/)/i', $src)) {
+                return '<img src="' . e($src) . '" alt="" loading="lazy" style="max-width:100%;height:auto">';
+            }
+        }
+        // Strip base64/data URI images and any other invalid src
+        return '';
+    }, $clean);
 
     // Clean up attributes - only allow href on links (with safe protocols) and class
     $clean = preg_replace_callback('/<a\s+([^>]*)>/i', function($matches) {
@@ -117,11 +131,171 @@ function render_content($content)
     if (empty($content)) return '';
 
     if (is_html_content($content)) {
-        return linkify_urls(safe_html($content));
+        return render_link_previews(linkify_urls(safe_html($content)));
     }
 
     // Plain text - escape, convert newlines, then linkify
-    return linkify_urls(nl2br(e($content)));
+    return render_link_previews(linkify_urls(nl2br(e($content))));
+}
+
+/**
+ * Convert standalone links to known services into rich preview cards.
+ * Only converts links that appear on their own line (not inline within text).
+ */
+function render_link_previews(string $html): string
+{
+    if ($html === '' || strpos($html, '<a ') === false) return $html;
+
+    // Match standalone links: <a> tag that is the primary content of a block
+    // Preceded by tag boundary or line start, followed by tag boundary or line end
+    return preg_replace_callback(
+        '~(?<=<p>|<br>|<br />|<div>|\A|>)\s*(<a\s+[^>]*href="([^"]+)"[^>]*>([^<]*)</a>)\s*(?=</p>|<br>|<br />|</div>|\z|<)~i',
+        function ($m) {
+            $original = $m[1];
+            $url = $m[2];
+            $text = $m[3];
+            $card = build_link_preview_card($url, $text);
+            return $card ? $card : $original;
+        },
+        $html
+    );
+}
+
+/**
+ * Build a preview card for a known service URL.
+ * Returns HTML card string or null if URL is not recognized.
+ */
+function build_link_preview_card(string $url, string $link_text): ?string
+{
+    // YouTube
+    if (preg_match('~(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([a-zA-Z0-9_-]{11})~i', $url, $m)) {
+        $vid = e($m[1]);
+        $thumb = "https://img.youtube.com/vi/{$vid}/hqdefault.jpg";
+        $title = $link_text !== $url ? e($link_text) : 'YouTube video';
+        return _link_preview_card($url, $title, 'YouTube', $thumb, _lp_icon_youtube(), 'youtube');
+    }
+
+    // Google Drive file
+    if (preg_match('~drive\.google\.com/file/d/([a-zA-Z0-9_-]+)~i', $url, $m)) {
+        $fid = e($m[1]);
+        $thumb = "https://drive.google.com/thumbnail?id={$fid}&sz=w400";
+        $title = $link_text !== $url ? e($link_text) : t('Google Drive file');
+        return _link_preview_card($url, $title, 'Google Drive', $thumb, _lp_icon_gdrive());
+    }
+
+    // Google Docs
+    if (preg_match('~docs\.google\.com/document/d/([a-zA-Z0-9_-]+)~i', $url, $m)) {
+        $title = $link_text !== $url ? e($link_text) : t('Google Docs');
+        return _link_preview_card($url, $title, 'Google Docs', null, _lp_icon_gdocs());
+    }
+
+    // Google Sheets
+    if (preg_match('~docs\.google\.com/spreadsheets/d/([a-zA-Z0-9_-]+)~i', $url, $m)) {
+        $title = $link_text !== $url ? e($link_text) : t('Google Sheets');
+        return _link_preview_card($url, $title, 'Google Sheets', null, _lp_icon_gsheets());
+    }
+
+    // Google Slides
+    if (preg_match('~docs\.google\.com/presentation/d/([a-zA-Z0-9_-]+)~i', $url, $m)) {
+        $fid = e($m[1]);
+        $thumb = "https://docs.google.com/presentation/d/{$fid}/export/png?pageid=p";
+        $title = $link_text !== $url ? e($link_text) : t('Google Slides');
+        return _link_preview_card($url, $title, 'Google Slides', $thumb, _lp_icon_gslides());
+    }
+
+    // Dropbox
+    if (preg_match('~dropbox\.com/(?:s|scl/fi)/[a-zA-Z0-9]+(?:/([^?#]+))?~i', $url, $m)) {
+        $fname = !empty($m[1]) ? e(urldecode(basename($m[1]))) : t('Dropbox file');
+        $title = $link_text !== $url ? e($link_text) : $fname;
+        return _link_preview_card($url, $title, 'Dropbox', null, _lp_icon_dropbox());
+    }
+
+    // OneDrive
+    if (preg_match('~(1drv\.ms/|onedrive\.live\.com/)~i', $url)) {
+        $title = $link_text !== $url ? e($link_text) : t('OneDrive file');
+        return _link_preview_card($url, $title, 'OneDrive', null, _lp_icon_onedrive());
+    }
+
+    // Figma
+    if (preg_match('~figma\.com/(file|design|board)/([a-zA-Z0-9]+)~i', $url, $m)) {
+        $title = $link_text !== $url ? e($link_text) : t('Figma design');
+        return _link_preview_card($url, $title, 'Figma', null, _lp_icon_figma());
+    }
+
+    // GitHub
+    if (preg_match('~github\.com/([a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+)(/[^?#]*)?~i', $url, $m)) {
+        $repo = e($m[1]);
+        $path = isset($m[2]) && $m[2] !== '' ? e($m[2]) : '';
+        $title = $link_text !== $url ? e($link_text) : $repo . $path;
+        return _link_preview_card($url, $title, 'GitHub', null, _lp_icon_github());
+    }
+
+    // Direct image URL
+    if (preg_match('~\.(png|jpe?g|gif|webp)(\?[^"]*)?$~i', $url)) {
+        $fname = e(basename(parse_url($url, PHP_URL_PATH)));
+        $title = $link_text !== $url ? e($link_text) : $fname;
+        return _link_preview_card($url, $title, t('Image'), $url, _lp_icon_image(), 'image');
+    }
+
+    return null;
+}
+
+/**
+ * Render a link preview card HTML.
+ */
+function _link_preview_card(string $url, string $title, string $service, ?string $thumb, string $icon, string $extra_class = ''): string
+{
+    $cls = 'link-preview-card' . ($extra_class ? ' lp-' . $extra_class : '');
+    $safe_url = e($url);
+
+    $thumb_html = '';
+    if ($thumb) {
+        $safe_thumb = e($thumb);
+        $thumb_html = '<span class="lp-thumb"><img src="' . $safe_thumb . '" alt="" loading="lazy" onerror="this.parentElement.style.display=\'none\'"></span>';
+    }
+
+    // Use </p> prefix + <p> suffix to break out of inline context — prevents browser
+    // from mangling block-level card when it's inside a <p> from the rich text editor
+    return '</p><a href="' . $safe_url . '" target="_blank" rel="noopener noreferrer" class="' . $cls . '">'
+        . $thumb_html
+        . '<span class="lp-info">'
+        . '<span class="lp-title">' . $title . '</span>'
+        . '<span class="lp-service">' . $icon . ' <span>' . e($service) . '</span></span>'
+        . '</span>'
+        . '</a><p>';
+}
+
+// ── Link Preview Service Icons (inline SVG, 16×16) ─────────────────────────
+
+function _lp_icon_youtube(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.38.55A3.02 3.02 0 00.5 6.19 31.6 31.6 0 000 12a31.6 31.6 0 00.5 5.81 3.02 3.02 0 002.12 2.14c1.88.55 9.38.55 9.38.55s7.5 0 9.38-.55a3.02 3.02 0 002.12-2.14A31.6 31.6 0 0024 12a31.6 31.6 0 00-.5-5.81zM9.55 15.57V8.43L15.82 12l-6.27 3.57z"/></svg>';
+}
+function _lp_icon_gdrive(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24"><path d="M8.27 2.56L.55 15.78h6.06l7.72-13.22z" fill="#0066DA"/><path d="M16.63 2.56H8.27l7.72 13.22h8.36z" fill="#00AC47"/><path d="M.55 15.78l4.18 7.16h14.54l4.18-7.16z" fill="#EA4335"/></svg>';
+}
+function _lp_icon_gdocs(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="1" width="18" height="22" rx="2" fill="#4285F4"/><rect x="7" y="7" width="10" height="1.5" rx=".75" fill="#fff"/><rect x="7" y="10.5" width="10" height="1.5" rx=".75" fill="#fff"/><rect x="7" y="14" width="7" height="1.5" rx=".75" fill="#fff"/></svg>';
+}
+function _lp_icon_gsheets(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="1" width="18" height="22" rx="2" fill="#0F9D58"/><rect x="6" y="6" width="12" height="12" rx="1" fill="#fff"/><line x1="12" y1="6" x2="12" y2="18" stroke="#0F9D58" stroke-width="1"/><line x1="6" y1="12" x2="18" y2="12" stroke="#0F9D58" stroke-width="1"/></svg>';
+}
+function _lp_icon_gslides(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="1" width="18" height="22" rx="2" fill="#F4B400"/><rect x="6" y="7" width="12" height="8" rx="1" fill="#fff"/></svg>';
+}
+function _lp_icon_dropbox(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="#0061FF"><path d="M12 2l-6 3.75L12 9.5l6-3.75zm-6 7.5L12 13.25l6-3.75L12 5.75zm6 7.5l-6-3.75L0 17l6 3.75zm0 0l6-3.75L24 17l-6 3.75zM6 5.75L0 9.5l6 3.75 6-3.75z"/></svg>';
+}
+function _lp_icon_onedrive(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24"><path d="M10.5 7.5a5 5 0 019.1 2.3A3.5 3.5 0 0121 16.5H6a4 4 0 01-.6-7.95A5 5 0 0110.5 7.5z" fill="#0078D4"/></svg>';
+}
+function _lp_icon_figma(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24"><circle cx="15.5" cy="12" r="3.5" fill="#1ABCFE"/><path d="M8.5 1.5h3.5a3.5 3.5 0 010 7H8.5z" fill="#F24E1E"/><path d="M8.5 8.5h3.5a3.5 3.5 0 010 7H8.5z" fill="#A259FF"/><path d="M8.5 15.5h3.5a3.5 3.5 0 11-3.5 3.5z" fill="#0ACF83"/><path d="M5 5a3.5 3.5 0 013.5-3.5H12V8.5H8.5A3.5 3.5 0 015 5z" fill="#FF7262"/></svg>';
+}
+function _lp_icon_github(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.09 3.29 9.4 7.86 10.93.58.1.79-.25.79-.56v-1.97c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11.1 11.1 0 015.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.41-5.27 5.7.42.36.79 1.06.79 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0023.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>';
+}
+function _lp_icon_image(): string {
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
 }
 
 /**
