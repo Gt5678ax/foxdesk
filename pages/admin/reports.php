@@ -124,6 +124,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_admin()) {
             $start_dt = DateTime::createFromFormat('Y-m-d H:i', $entry_date . ' ' . $start_time);
             $end_dt = DateTime::createFromFormat('Y-m-d H:i', $entry_date . ' ' . $end_time);
 
+            if (!$start_dt || !$end_dt) {
+                flash(t('Invalid time format.'), 'error');
+                header('Location: ' . ($_SERVER['REQUEST_URI'] ?? url('admin', ['section' => 'reports', 'tab' => 'worklog'])));
+                exit;
+            }
+
             // If end time is before start time, assume it's the next day
             if ($end_dt <= $start_dt) {
                 $end_dt->modify('+1 day');
@@ -307,13 +313,14 @@ if ($time_tracking_available && $tab !== 'shared') {
         $sql .= " AND (" . implode(' OR ', $tag_conditions) . ")";
     }
 
-    $sql .= " ORDER BY tte.started_at DESC, tte.id DESC";
+    $sql .= " ORDER BY tte.started_at DESC, tte.id DESC LIMIT 10000";
     $entries = db_fetch_all($sql, $params);
 
     foreach ($entries as &$entry) {
-        $actual_minutes = (int) $entry['duration_minutes'];
         if (empty($entry['ended_at']) && !empty($entry['started_at'])) {
-            $actual_minutes = max(0, (int) floor((time() - strtotime($entry['started_at'])) / 60));
+            $actual_minutes = max(0, (int) floor(calculate_timer_elapsed($entry) / 60));
+        } else {
+            $actual_minutes = (int) $entry['duration_minutes'];
         }
 
         // Determine source
@@ -722,6 +729,11 @@ include BASE_PATH . '/includes/components/page-header.php';
             foreach ($selected_tags as $stag) {
                 $active_filters[] = ['type' => 'tag', 'label' => '#' . $stag, 'value' => $stag];
             }
+            // Non-admin agents: add implicit "my entries" filter indicator
+            if (!is_admin()) {
+                $cu = current_user();
+                $active_filters[] = ['type' => 'my_entries', 'label' => trim($cu['first_name'] . ' ' . $cu['last_name'])];
+            }
             $has_active_filters = !empty($active_filters);
             $filter_collapsed = $has_active_filters; // Start collapsed when filters are applied
             ?>
@@ -759,12 +771,19 @@ include BASE_PATH . '/includes/components/page-header.php';
                     }
                     $remove_url = 'index.php?' . http_build_query($remove_params);
                     ?>
+                    <?php if ($af['type'] === 'my_entries'): ?>
+                    <span style="display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px; font-size: 0.6875rem; border-radius: 9999px; background: var(--primary-light, rgba(59,130,246,0.1)); color: var(--primary);">
+                        <?php echo get_icon('user', 'w-3 h-3'); ?>
+                        <?php echo e(t('My entries')); ?>: <?php echo e($af['label']); ?>
+                    </span>
+                    <?php else: ?>
                     <a href="<?php echo e($remove_url); ?>"
                        style="display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px; font-size: 0.6875rem; border-radius: 9999px; background: var(--primary-light, rgba(59,130,246,0.1)); color: var(--primary); text-decoration: none;"
                        title="<?php echo e(t('Remove filter')); ?>">
                         <?php echo e($af['label']); ?>
                         <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </a>
+                    <?php endif; ?>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
@@ -941,11 +960,11 @@ include BASE_PATH . '/includes/components/page-header.php';
         <?php if ($tab === 'summary'): ?>
             <div style="display: flex; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 0.75rem; overflow: hidden; background: var(--surface-primary);">
                 <div style="flex: 1; padding: 8px 14px;">
-                    <div style="font-size: 0.5625rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 2px;"><?php echo e(t('Total time')); ?></div>
+                    <div style="font-size: 0.5625rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 2px;"><?php echo e(is_admin() ? t('Total time') : t('My time')); ?></div>
                     <div style="font-size: 1.125rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;"><?php echo e(format_duration_minutes($totals['minutes'])); ?></div>
                 </div>
                 <div style="flex: 1; padding: 8px 14px; border-left: 1px solid var(--border-light);">
-                    <div style="font-size: 0.5625rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 2px;"><?php echo e(t('Billable time')); ?></div>
+                    <div style="font-size: 0.5625rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 2px;"><?php echo e(is_admin() ? t('Billable time') : t('My billable time')); ?></div>
                     <div style="font-size: 1.125rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;"><?php echo e(format_duration_minutes($totals['billable_minutes'])); ?></div>
                 </div>
                 <?php if ($show_money): ?>
@@ -1067,6 +1086,7 @@ include BASE_PATH . '/includes/components/page-header.php';
                     </div>
                 </div>
 
+                <?php if (is_admin()): ?>
                 <div class="card overflow-hidden">
                     <div class="card-header" style="padding: 0.5rem 0.75rem;">
                         <h3 style="font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);"><?php echo e(t('Agents')); ?></h3>
@@ -1122,6 +1142,7 @@ include BASE_PATH . '/includes/components/page-header.php';
                         </table>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
 
             <?php if (!empty($by_source) && count($by_source) > 1): ?>

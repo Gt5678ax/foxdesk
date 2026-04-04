@@ -73,9 +73,10 @@ $entries = db_fetch_all($sql, $params);
 $total_minutes = 0;
 $by_ticket = [];
 foreach ($entries as &$entry) {
-    $actual_minutes = (int) $entry['duration_minutes'];
     if (empty($entry['ended_at']) && !empty($entry['started_at'])) {
-        $actual_minutes = max(0, (int) floor((time() - strtotime($entry['started_at'])) / 60));
+        $actual_minutes = max(0, (int) floor(calculate_timer_elapsed($entry) / 60));
+    } else {
+        $actual_minutes = (int) $entry['duration_minutes'];
     }
     $entry['actual_minutes'] = $actual_minutes;
     $total_minutes += $actual_minutes;

@@ -769,9 +769,8 @@ $sql .= " ORDER BY FIELD(u.role, 'user', 'agent', 'admin'), u.first_name, u.last
 $users = db_fetch_all($sql, $params);
 
 if ($time_tracking_available) {
-    $sql = "SELECT user_id,
-                   SUM(CASE WHEN ended_at IS NULL THEN TIMESTAMPDIFF(MINUTE, started_at, NOW()) ELSE duration_minutes END) as total_minutes
-            FROM ticket_time_entries";
+    $dur = sql_timer_duration_minutes();
+    $sql = "SELECT user_id, SUM({$dur}) as total_minutes FROM ticket_time_entries";
     $params = [];
     if ($range_start && $range_end) {
         $sql .= " WHERE started_at >= ? AND started_at <= ?";

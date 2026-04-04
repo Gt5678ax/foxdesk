@@ -387,9 +387,9 @@ if ($show_time && !empty($tickets)) {
     }, $tickets);
     $placeholders = implode(',', array_fill(0, count($ticket_ids), '?'));
 
+    $dur = sql_timer_duration_minutes();
     $rows = db_fetch_all(
-        "SELECT ticket_id,
-                SUM(CASE WHEN ended_at IS NULL THEN TIMESTAMPDIFF(MINUTE, started_at, NOW()) ELSE duration_minutes END) as total_minutes
+        "SELECT ticket_id, SUM({$dur}) as total_minutes
          FROM ticket_time_entries
          WHERE ticket_id IN ($placeholders)
          GROUP BY ticket_id",
@@ -401,7 +401,7 @@ if ($show_time && !empty($tickets)) {
 
     $running_rows = db_fetch_all(
         "SELECT tte.ticket_id, tte.user_id, u.first_name, u.last_name, tte.started_at,
-                TIMESTAMPDIFF(MINUTE, tte.started_at, NOW()) as elapsed_minutes
+                " . sql_timer_duration_minutes('tte.') . " as elapsed_minutes
          FROM ticket_time_entries tte
          LEFT JOIN users u ON tte.user_id = u.id
          WHERE tte.ticket_id IN ($placeholders) AND tte.ended_at IS NULL

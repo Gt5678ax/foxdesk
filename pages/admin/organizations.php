@@ -284,8 +284,8 @@ foreach ($organizations as $org) {
 
 // Organization time totals
 if ($time_tracking_available) {
-    $sql = "SELECT t.organization_id,
-                   SUM(CASE WHEN tte.ended_at IS NULL THEN TIMESTAMPDIFF(MINUTE, tte.started_at, NOW()) ELSE tte.duration_minutes END) as total_minutes
+    $dur = sql_timer_duration_minutes('tte.');
+    $sql = "SELECT t.organization_id, SUM({$dur}) as total_minutes
             FROM ticket_time_entries tte
             JOIN tickets t ON tte.ticket_id = t.id
             WHERE t.organization_id IS NOT NULL";

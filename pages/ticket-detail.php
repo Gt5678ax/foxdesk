@@ -1010,8 +1010,12 @@ require_once BASE_PATH . '/includes/header.php';
                                                                             <?php echo get_icon('clock', 'w-3.5 h-3.5 flex-shrink-0'); ?>
                                                                             <span class="font-medium" style="color: var(--text-secondary);"><?php
                                                                             if (empty($entry['ended_at'])) {
-                                                                                echo format_duration_minutes(floor((time() - strtotime($entry['started_at'])) / 60));
-                                                                                echo ' <span class="text-green-600">(' . t('Running') . ')</span>';
+                                                                                echo format_duration_minutes(max(0, (int) floor(calculate_timer_elapsed($entry) / 60)));
+                                                                                if (!empty($entry['paused_at'])) {
+                                                                                    echo ' <span class="text-yellow-600">(' . t('Paused') . ')</span>';
+                                                                                } else {
+                                                                                    echo ' <span class="text-green-600">(' . t('Running') . ')</span>';
+                                                                                }
                                                                             } else {
                                                                                 echo format_duration_minutes($entry['duration_minutes']);
                                                                             }

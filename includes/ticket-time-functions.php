@@ -133,9 +133,9 @@ function get_ticket_time_total($ticket_id) {
         return 0;
     }
     try {
+        $dur = sql_timer_duration_minutes();
         $row = db_fetch_one(
-            "SELECT SUM(CASE WHEN ended_at IS NULL THEN TIMESTAMPDIFF(MINUTE, started_at, NOW()) ELSE duration_minutes END) as total
-             FROM ticket_time_entries WHERE ticket_id = ?",
+            "SELECT SUM({$dur}) as total FROM ticket_time_entries WHERE ticket_id = ?",
             [$ticket_id]
         );
         return (int)($row['total'] ?? 0);
@@ -268,6 +268,28 @@ function calculate_timer_elapsed($timer) {
         // Timer is stopped - use stored duration
         return (int)($timer['duration_minutes'] ?? 0) * 60;
     }
+}
+
+/**
+ * Return a SQL expression that calculates timer duration in minutes,
+ * correctly handling paused and running timers.
+ * Use this everywhere instead of inline TIMESTAMPDIFF patterns.
+ *
+ * @param string $prefix Table alias prefix (e.g. 'tte.') — include the dot
+ */
+function sql_timer_duration_minutes(string $prefix = ''): string
+{
+    $p = $prefix;
+    if (timer_pause_columns_exist()) {
+        return "CASE
+            WHEN {$p}ended_at IS NOT NULL THEN {$p}duration_minutes
+            WHEN {$p}paused_at IS NOT NULL THEN
+                GREATEST(0, FLOOR((TIMESTAMPDIFF(SECOND, {$p}started_at, {$p}paused_at) - IFNULL({$p}paused_seconds, 0)) / 60))
+            ELSE
+                GREATEST(0, FLOOR((TIMESTAMPDIFF(SECOND, {$p}started_at, NOW()) - IFNULL({$p}paused_seconds, 0)) / 60))
+            END";
+    }
+    return "CASE WHEN {$p}ended_at IS NULL THEN TIMESTAMPDIFF(MINUTE, {$p}started_at, NOW()) ELSE {$p}duration_minutes END";
 }
 
 /**
@@ -473,11 +495,10 @@ function get_ticket_time_breakdown($ticket_id) {
 
     try {
         $placeholders = implode(',', array_fill(0, count($ai_ids), '?'));
+        $dur = sql_timer_duration_minutes();
         $sql = "SELECT
-                    SUM(CASE WHEN ended_at IS NULL THEN TIMESTAMPDIFF(MINUTE, started_at, NOW()) ELSE duration_minutes END) as total,
-                    SUM(CASE WHEN user_id IN ($placeholders)
-                        THEN (CASE WHEN ended_at IS NULL THEN TIMESTAMPDIFF(MINUTE, started_at, NOW()) ELSE duration_minutes END)
-                        ELSE 0 END) as ai
+                    SUM({$dur}) as total,
+                    SUM(CASE WHEN user_id IN ($placeholders) THEN ({$dur}) ELSE 0 END) as ai
                 FROM ticket_time_entries WHERE ticket_id = ?";
         $params = array_merge($ai_ids, [$ticket_id]);
         $row = db_fetch_one($sql, $params);
