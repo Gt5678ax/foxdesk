@@ -1,22 +1,14 @@
 {
-    "version": "0.3.95",
-    "date": "2026-04-08",
+    "version": "0.3.96",
+    "date": "2026-04-09",
     "min_php": "8.1",
     "changelog": [
-        "Notifications: fixed mark-as-read not persisting — badge now uses server count instead of optimistic decrement",
-        "Notifications: click-to-navigate now survives page transition (keepalive fetch)",
-        "Notifications: badge renders instantly from server-side count, no 60s polling delay",
-        "Notifications: fixed mark-as-read button not disappearing on notifications page",
-        "Settings: fixed fatal crash on Security tab (invalid DATETIME comparison in MySQL strict mode)",
-        "Auth: fixed remember-me token not cleared on logout edge case, preventing session confusion",
-        "Dashboard: My Time widget now includes running and paused timers (consistent with Reports)",
-        "Tickets: kanban/list view now persists via cookie — no flash on page load",
-        "Tickets: after status change, redirects back to ticket list or dashboard instead of staying on ticket",
-        "New ticket: agents can set initial status when creating a ticket",
-        "New ticket: agents can log manual time with start/end times (replaces minutes-only input)",
-        "Time tracking: fixed midnight overflow — entries spanning midnight (e.g. 23:16–00:16) now calculate correctly",
-        "Help panel: keyboard shortcuts now role-aware (admin-only shortcuts hidden from agents)",
-        "Performance: timer favicon preload limited to agent/admin pages only"
+        "New ticket: status selector moved out of Advanced section — visible immediately as pill selector",
+        "New ticket: timer now persists across page navigation and browser restarts via localStorage",
+        "New ticket: timer automatically stops and saves when ticket is submitted (no more orphaned running timers)",
+        "New ticket: draft timer appears in sidebar Active Timers on all pages with live elapsed time",
+        "New ticket: browser notification when draft timer exceeds configured alert threshold (Settings > Time Tracking)",
+        "New ticket: removed dead code path for manual_duration_minutes fallback"
     ],
     "delete_files": []
 }

@@ -152,26 +152,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (!$manual_time_logged && $timer_elapsed > 0) {
-                    // Timer was running — start a live DB timer backdated to when client timer started
+                    // Timer was running — save as completed entry
                     $org_billable_rate = 0.0;
-                    if (!empty($ticket['organization_id'] ?? null)) {
-                        $org = get_organization($ticket_id);
+                    if (!empty($organization_id)) {
+                        $org = get_organization($organization_id);
                         $org_billable_rate = (float)($org['billable_rate'] ?? 0);
                     }
                     $user_cost_rate = (float)($user['cost_rate'] ?? 0);
-                    db_insert('ticket_time_entries', [
+                    $timer_started = date('Y-m-d H:i:s', time() - $timer_elapsed);
+                    $timer_duration = max(1, (int) floor($timer_elapsed / 60));
+                    $timer_entry = [
                         'ticket_id' => $ticket_id,
                         'user_id' => $user['id'],
-                        'started_at' => date('Y-m-d H:i:s', time() - $timer_elapsed),
-                        'ended_at' => null,
-                        'duration_minutes' => 0,
+                        'started_at' => $timer_started,
+                        'ended_at' => date('Y-m-d H:i:s'),
+                        'duration_minutes' => $timer_duration,
                         'is_billable' => 1,
                         'billable_rate' => $org_billable_rate,
                         'cost_rate' => $user_cost_rate,
                         'is_manual' => 0,
                         'created_at' => date('Y-m-d H:i:s')
-                    ]);
-                    log_activity($ticket_id, $user['id'], 'time_started', 'Timer started');
+                    ];
+                    if (function_exists('time_entry_source_column_exists') && time_entry_source_column_exists()) {
+                        $timer_entry['source'] = 'timer';
+                    }
+                    db_insert('ticket_time_entries', $timer_entry);
+                    log_activity($ticket_id, $user['id'], 'time_stopped', "Timer stopped ({$timer_duration} min)");
                 }
             }
 
@@ -353,6 +359,24 @@ include BASE_PATH . '/includes/components/page-header.php';
                 <?php endif; ?>
             </div>
 
+            <!-- Status (admin/agent only) — visible immediately -->
+            <?php if (is_admin() || is_agent()): ?>
+            <div>
+                <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Status')); ?></label>
+                <input type="hidden" name="status_id" id="status_id" value="<?php echo (int) ($statuses[0]['id'] ?? 0); ?>">
+                <div class="flex flex-wrap gap-1.5 items-center" id="status-selector">
+                    <?php foreach ($statuses as $i => $status): ?>
+                        <div class="option-pill <?php echo $i === 0 ? 'selected' : ''; ?>"
+                            data-value="<?php echo (int) $status['id']; ?>" data-group="status"
+                            onclick="selectOption(this, 'status_id')"
+                            style="--pill-color: <?php echo e($status['color'] ?? '#6b7280'); ?>">
+                            <span><?php echo e($status['name']); ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Advanced Settings (collapsible) -->
             <details class="group">
                 <summary class="flex items-center gap-2 cursor-pointer py-2 text-sm font-medium" style="color: var(--text-secondary);">
@@ -407,18 +431,6 @@ include BASE_PATH . '/includes/components/page-header.php';
                             <input type="datetime-local" name="due_date" value="<?php echo e($_POST['due_date'] ?? ''); ?>"
                                 class="form-input">
                         </div>
-
-                        <!-- Status (admin/agent only) -->
-                        <?php if (is_admin() || is_agent()): ?>
-                        <div>
-                            <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary);"><?php echo e(t('Status')); ?></label>
-                            <select name="status_id" class="form-select">
-                                <?php foreach ($statuses as $status): ?>
-                                    <option value="<?php echo (int) $status['id']; ?>"><?php echo e($status['name']); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <?php endif; ?>
 
                         <!-- Assign To (admin/agent only) -->
                         <?php if (is_admin() || is_agent()): ?>
@@ -861,6 +873,7 @@ include BASE_PATH . '/includes/components/page-header.php';
 <?php if (is_agent() && function_exists('ticket_time_table_exists') && ticket_time_table_exists()): ?>
 <script>
 (function() {
+    var STORAGE_KEY = 'foxdesk_draft_timer';
     var wrapper = document.getElementById('new-ticket-timer');
     var btn = document.getElementById('nt-timer-btn');
     var btnIcon = btn ? btn.querySelector('.nt-timer-icon') : null;
@@ -869,9 +882,9 @@ include BASE_PATH . '/includes/components/page-header.php';
     var hiddenInput = document.getElementById('timer_elapsed_seconds');
     if (!wrapper || !btn || !btnIcon || !btnText || !discardBtn || !hiddenInput) return;
 
-    // Server-rendered icon SVGs and translated strings (safe — not user input)
-    var ICON_PLAY = '<?php echo get_icon('play', 'w-4 h-4'); ?>';
-    var ICON_PAUSE = '<?php echo get_icon('pause', 'w-4 h-4'); ?>';
+    // Server-rendered icon SVGs (safe — PHP-escaped, not user input) and translated strings
+    var iconPlay = '<?php echo get_icon('play', 'w-4 h-4'); ?>';
+    var iconPause = '<?php echo get_icon('pause', 'w-4 h-4'); ?>';
     var STR_START = '<?php echo e(t('Start timer')); ?>';
     var STR_PAUSE = '<?php echo e(t('Pause timer')); ?>';
     var STR_RESUME = '<?php echo e(t('Resume timer')); ?>';
@@ -880,10 +893,44 @@ include BASE_PATH . '/includes/components/page-header.php';
 
     var timerStart = null;
     var timerInterval = null;
-    var pausedTotal = 0;     // accumulated paused ms
-    var pausedAt = null;     // timestamp when paused
-    var state = 'stopped';   // 'stopped' | 'running' | 'paused'
+    var pausedTotal = 0;
+    var pausedAt = null;
+    var state = 'stopped';
 
+    // --- localStorage persistence ---
+    function saveTimer() {
+        if (state === 'stopped') {
+            localStorage.removeItem(STORAGE_KEY);
+            return;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            startedAt: timerStart,
+            pausedTotal: pausedTotal,
+            pausedAt: pausedAt,
+            state: state
+        }));
+    }
+
+    function restoreTimer() {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        try { var d = JSON.parse(raw); } catch(e) { return false; }
+        if (!d.startedAt || !d.state) return false;
+
+        timerStart = d.startedAt;
+        if (d.state === 'paused' && d.pausedAt) {
+            // Hibernation time counts as paused
+            pausedTotal = d.pausedTotal + (Date.now() - d.pausedAt);
+            pausedAt = Date.now();
+        } else {
+            pausedTotal = d.pausedTotal || 0;
+            pausedAt = null;
+        }
+        setState(d.state);
+        return true;
+    }
+
+    // --- Core timer logic ---
     function formatTime(seconds) {
         if (seconds < 0) seconds = 0;
         var h = Math.floor(seconds / 3600);
@@ -905,6 +952,9 @@ include BASE_PATH . '/includes/components/page-header.php';
         hiddenInput.value = elapsed;
     }
 
+    // setIcon: safely swap SVG icon content (source is PHP get_icon(), not user input)
+    function setIcon(el, svgHtml) { el.innerHTML = svgHtml; } // eslint-disable-line no-param-reassign
+
     function setState(newState) {
         state = newState;
         btn.dataset.state = newState;
@@ -914,8 +964,7 @@ include BASE_PATH . '/includes/components/page-header.php';
         if (newState === 'running') {
             btn.className = 'btn btn-warning px-3 py-1.5 text-sm inline-flex items-center gap-1.5 transition-colors';
             btn.title = STR_PAUSE;
-            // Icon update — PHP-generated SVG, not user input
-            btnIcon.innerHTML = ICON_PAUSE;
+            setIcon(btnIcon, iconPause);
             btnText.textContent = formatTime(getElapsed());
             discardBtn.classList.remove('hidden');
             timerInterval = setInterval(tick, 1000);
@@ -924,8 +973,7 @@ include BASE_PATH . '/includes/components/page-header.php';
             var elapsed = getElapsed();
             btn.className = 'btn btn-success px-3 py-1.5 text-sm inline-flex items-center gap-1.5 transition-colors';
             btn.title = STR_RESUME;
-            btnIcon.innerHTML = ICON_PLAY;
-            // Show elapsed time with "Paused" label
+            setIcon(btnIcon, iconPlay);
             btnText.textContent = formatTime(elapsed);
             var pausedLabel = document.createElement('span');
             pausedLabel.className = 'text-xs uppercase ml-1';
@@ -937,7 +985,7 @@ include BASE_PATH . '/includes/components/page-header.php';
         } else { // stopped
             btn.className = 'btn btn-success px-3 py-1.5 text-sm inline-flex items-center gap-1.5 transition-colors';
             btn.title = STR_START;
-            btnIcon.innerHTML = ICON_PLAY;
+            setIcon(btnIcon, iconPlay);
             btnText.textContent = STR_START;
             discardBtn.classList.add('hidden');
             timerStart = null;
@@ -945,6 +993,7 @@ include BASE_PATH . '/includes/components/page-header.php';
             pausedAt = null;
             hiddenInput.value = '0';
         }
+        saveTimer();
     }
 
     btn.addEventListener('click', function() {
@@ -968,8 +1017,13 @@ include BASE_PATH . '/includes/components/page-header.php';
         setState('stopped');
     });
 
-    // Auto-start timer if ?auto_timer=1 was passed
-    if (wrapper.dataset.autoStart === '1') {
+    // Clear localStorage on form submit — timer data goes into hidden input
+    document.getElementById('new-ticket-form').addEventListener('submit', function() {
+        localStorage.removeItem(STORAGE_KEY);
+    });
+
+    // Restore from localStorage, or auto-start if ?auto_timer=1
+    if (!restoreTimer() && wrapper.dataset.autoStart === '1') {
         timerStart = Date.now();
         pausedTotal = 0;
         pausedAt = null;

@@ -1145,6 +1145,177 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
         })();
         </script>
 
+        <?php if (is_admin() || is_agent()): ?>
+        <!-- Draft timer (new-ticket) — sidebar indicator + long-timer notification -->
+        <script>
+        (function() {
+            var STORAGE_KEY = 'foxdesk_draft_timer';
+            var ALERT_KEY = 'foxdesk_draft_timer_alerted';
+            var alertHours = <?php echo (int) ($settings['timer_alert_hours'] ?? 3); ?>;
+            var alertEnabled = <?php echo ($settings['timer_alert_enabled'] ?? '0') === '1' ? 'true' : 'false'; ?>;
+            var newTicketUrl = 'index.php?page=new-ticket';
+            var strNewTicket = <?php echo json_encode(t('New ticket')); ?>;
+            var strTimerRunning = <?php echo json_encode(t('Timer running')); ?>;
+            var strPaused = <?php echo json_encode(t('Paused')); ?>;
+            var strTimerExceeded = <?php echo json_encode(t('Your draft ticket timer has been running for over {hours} hours.')); ?>;
+            var isNewTicketPage = (window.location.search.indexOf('page=new-ticket') !== -1);
+
+            function getDraftTimer() {
+                try {
+                    var raw = localStorage.getItem(STORAGE_KEY);
+                    if (!raw) return null;
+                    var d = JSON.parse(raw);
+                    if (!d.startedAt || !d.state) return null;
+                    return d;
+                } catch(e) { return null; }
+            }
+
+            function getElapsedSeconds(d) {
+                var pt = d.pausedTotal || 0;
+                if (d.state === 'paused' && d.pausedAt) {
+                    pt += Date.now() - d.pausedAt;
+                }
+                return Math.floor((Date.now() - d.startedAt - pt) / 1000);
+            }
+
+            function formatDuration(seconds) {
+                if (seconds < 0) seconds = 0;
+                var h = Math.floor(seconds / 3600);
+                var m = Math.floor((seconds % 3600) / 60);
+                var s = seconds % 60;
+                if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                return m + ':' + String(s).padStart(2, '0');
+            }
+
+            function showSidebarDraftTimer() {
+                var d = getDraftTimer();
+                var container = document.getElementById('sidebar-timers');
+                var list = document.getElementById('sidebar-timers-list');
+                if (!container || !list) return;
+
+                // Remove old draft entry if any
+                var old = document.getElementById('sidebar-draft-timer');
+                if (old) old.remove();
+
+                if (!d) {
+                    // Hide container if no DB timers either
+                    if (!list.children.length) container.style.display = 'none';
+                    updateTimerCount();
+                    return;
+                }
+
+                container.style.display = '';
+                var elapsed = getElapsedSeconds(d);
+                var isPaused = d.state === 'paused';
+
+                var row = document.createElement('div');
+                row.id = 'sidebar-draft-timer';
+                row.className = 'flex items-center group';
+
+                var link = document.createElement('a');
+                link.href = newTicketUrl;
+                link.className = 'sidebar-timer-item flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all sidebar-hover min-w-0';
+                link.title = strNewTicket;
+
+                var dot = document.createElement('span');
+                dot.className = 'flex-shrink-0 w-1.5 h-1.5 rounded-full ' + (isPaused ? 'bg-yellow-400' : 'sidebar-timer-pulse');
+                link.appendChild(dot);
+
+                var label = document.createElement('span');
+                label.className = 'flex-1 min-w-0 text-xs truncate';
+                label.style.color = 'var(--text-secondary)';
+                label.textContent = strNewTicket;
+                link.appendChild(label);
+
+                var time = document.createElement('span');
+                time.className = 'flex-shrink-0 text-[10px] font-mono font-medium';
+                time.style.color = isPaused ? 'var(--corp-warning, #f59e0b)' : 'var(--corp-success, #10b981)';
+                time.textContent = isPaused ? strPaused : formatDuration(elapsed);
+                time.id = 'sidebar-draft-timer-time';
+                link.appendChild(time);
+
+                row.appendChild(link);
+
+                // Discard button
+                var discardBtn = document.createElement('button');
+                discardBtn.className = 'flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500';
+                discardBtn.style.color = 'var(--text-muted)';
+                discardBtn.title = 'x';
+                discardBtn.textContent = '\u00d7';
+                discardBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    localStorage.removeItem(STORAGE_KEY);
+                    localStorage.removeItem(ALERT_KEY);
+                    row.remove();
+                    if (!list.children.length) container.style.display = 'none';
+                    updateTimerCount();
+                };
+                row.appendChild(discardBtn);
+
+                list.insertBefore(row, list.firstChild);
+                updateTimerCount();
+            }
+
+            function updateTimerCount() {
+                var list = document.getElementById('sidebar-timers-list');
+                var badge = document.querySelector('.sidebar-timer-count');
+                if (badge && list) badge.textContent = list.children.length;
+            }
+
+            // Live tick for sidebar draft timer (only on non-new-ticket pages)
+            function tickSidebar() {
+                var d = getDraftTimer();
+                var el = document.getElementById('sidebar-draft-timer-time');
+                if (!d || !el) return;
+                if (d.state === 'running') {
+                    el.textContent = formatDuration(getElapsedSeconds(d));
+                }
+            }
+
+            // Long timer notification
+            function checkTimerAlert() {
+                if (!alertEnabled || !alertHours) return;
+                var d = getDraftTimer();
+                if (!d) return;
+                var elapsed = getElapsedSeconds(d);
+                var limitSec = alertHours * 3600;
+                if (elapsed < limitSec) {
+                    localStorage.removeItem(ALERT_KEY);
+                    return;
+                }
+                if (localStorage.getItem(ALERT_KEY)) return;
+                localStorage.setItem(ALERT_KEY, '1');
+
+                var msg = strTimerExceeded.replace('{hours}', alertHours);
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(strTimerRunning, { body: msg, icon: 'assets/img/logo.png' });
+                } else if ('Notification' in window && Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(function(p) {
+                        if (p === 'granted') new Notification(strTimerRunning, { body: msg, icon: 'assets/img/logo.png' });
+                    });
+                }
+                if (typeof showAppToast === 'function') showAppToast(msg, 'warning');
+            }
+
+            // Init — skip sidebar injection on new-ticket page (has its own UI)
+            if (!isNewTicketPage) {
+                document.addEventListener('DOMContentLoaded', function() {
+                    showSidebarDraftTimer();
+                    setInterval(tickSidebar, 1000);
+                    checkTimerAlert();
+                    setInterval(checkTimerAlert, 60000);
+                });
+            } else {
+                // On new-ticket page, just check alert
+                document.addEventListener('DOMContentLoaded', function() {
+                    checkTimerAlert();
+                    setInterval(checkTimerAlert, 60000);
+                });
+            }
+        })();
+        </script>
+        <?php endif; ?>
+
         <!-- Page Content -->
         <div class="p-2 lg:p-3 xl:p-4">
 
