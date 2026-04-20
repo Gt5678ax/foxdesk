@@ -884,6 +884,32 @@ include BASE_PATH . '/includes/components/page-header.php';
     align-items: flex-start;
     -webkit-overflow-scrolling: touch;
 }
+.kanban-board--closed {
+    padding-top: 0.75rem;
+}
+.kanban-closed-toggle {
+    width: calc(100% - 1.5rem);
+    margin: 0.25rem 0.75rem 0;
+    padding: 0.625rem 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: 0.75rem;
+    background: var(--surface-secondary, #f9fafb);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.kanban-closed-toggle:hover {
+    background: var(--surface-primary, #ffffff);
+    color: var(--text-primary);
+}
 .kanban-column {
     flex: 0 0 272px;
     min-width: 272px;
@@ -1168,6 +1194,59 @@ include BASE_PATH . '/includes/components/page-header.php';
 }
 </style>
 
+<?php
+$statuses_by_id = [];
+$is_closed_filter_active = false;
+foreach ($statuses as $status_item) {
+    $statuses_by_id[(int) $status_item['id']] = $status_item;
+    if ($status_id === (int) $status_item['id'] && !empty($status_item['is_closed'])) {
+        $is_closed_filter_active = true;
+    }
+}
+
+$active_statuses = [];
+$closed_statuses = [];
+foreach ($statuses as $status_item) {
+    if (!$is_closed_filter_active && !empty($status_item['is_closed'])) {
+        $closed_statuses[] = $status_item;
+    } else {
+        $active_statuses[] = $status_item;
+    }
+}
+
+$active_tickets = [];
+$closed_tickets = [];
+foreach ($tickets as $ticket_item) {
+    $ticket_status = $statuses_by_id[(int) ($ticket_item['status_id'] ?? 0)] ?? null;
+    if (!$is_closed_filter_active && !empty($ticket_status['is_closed'])) {
+        $closed_tickets[] = $ticket_item;
+    } else {
+        $active_tickets[] = $ticket_item;
+    }
+}
+
+if (!$is_closed_filter_active && empty($active_statuses) && !empty($closed_statuses)) {
+    $active_statuses = $closed_statuses;
+    $closed_statuses = [];
+    $active_tickets = $tickets;
+    $closed_tickets = [];
+}
+
+$ticket_groups = [
+    ['name' => 'active', 'label' => '', 'tickets' => $active_tickets, 'hidden' => false],
+];
+if (!empty($closed_tickets)) {
+    $ticket_groups[] = ['name' => 'closed', 'label' => t('Closed') . ' (' . count($closed_tickets) . ')', 'tickets' => $closed_tickets, 'hidden' => true];
+}
+
+$board_status_groups = [
+    ['name' => 'active', 'label' => '', 'statuses' => $active_statuses, 'count' => count($active_tickets), 'hidden' => false],
+];
+if (!empty($closed_statuses) && !empty($closed_tickets)) {
+    $board_status_groups[] = ['name' => 'closed', 'label' => t('Closed'), 'statuses' => $closed_statuses, 'count' => count($closed_tickets), 'hidden' => true];
+}
+?>
+
 <!-- Tickets Table/List with Inline Filters -->
 <div class="card overflow-hidden <?php echo $ticket_view === 'board' ? 'kanban-board-wrapper' : ''; ?>">
     <?php if (empty($tickets)): ?>
@@ -1195,7 +1274,6 @@ include BASE_PATH . '/includes/components/page-header.php';
     <?php else: ?>
         <?php if ($ticket_view === 'board'): ?>
             <?php
-            // Group tickets by status
             $tickets_by_status = [];
             foreach ($statuses as $s) {
                 $tickets_by_status[(int)$s['id']] = [];
@@ -1208,67 +1286,84 @@ include BASE_PATH . '/includes/components/page-header.php';
             }
             $can_drag = is_agent() || is_admin();
             ?>
-            <div class="kanban-board">
-                <?php foreach ($statuses as $status): ?>
-                    <div class="kanban-column" data-status-id="<?php echo (int)$status['id']; ?>">
-                        <div class="kanban-column-header">
-                            <span class="kanban-dot" style="background: <?php echo e($status['color']); ?>;"></span>
-                            <span class="kanban-status-name"><?php echo e($status['name']); ?></span>
-                            <span class="kanban-count"><?php echo count($tickets_by_status[(int)$status['id']]); ?></span>
+            <?php foreach ($board_status_groups as $board_group): ?>
+                <?php if ($board_group['name'] === 'closed'): ?>
+                    <button type="button"
+                            class="kanban-closed-toggle"
+                            aria-expanded="false"
+                            onclick="var closedBoard = document.getElementById('closed-kanban-board'); closedBoard.classList.toggle('hidden'); this.setAttribute('aria-expanded', closedBoard.classList.contains('hidden') ? 'false' : 'true');">
+                        <span><?php echo e($board_group['label']); ?> (<span id="kanban-closed-count"><?php echo (int) $board_group['count']; ?></span>)</span>
+                        <span><?php echo get_icon('chevron-down', 'w-4 h-4'); ?></span>
+                    </button>
+                    <div id="closed-kanban-board" class="hidden">
+                <?php endif; ?>
+                <div class="kanban-board<?php echo $board_group['name'] === 'closed' ? ' kanban-board--closed' : ''; ?>">
+                    <?php foreach ($board_group['statuses'] as $status): ?>
+                        <div class="kanban-column"
+                             data-status-id="<?php echo (int) $status['id']; ?>"
+                             data-is-closed="<?php echo !empty($status['is_closed']) ? '1' : '0'; ?>">
+                            <div class="kanban-column-header">
+                                <span class="kanban-dot" style="background: <?php echo e($status['color']); ?>;"></span>
+                                <span class="kanban-status-name"><?php echo e($status['name']); ?></span>
+                                <span class="kanban-count"><?php echo count($tickets_by_status[(int) $status['id']]); ?></span>
+                            </div>
+                            <div class="kanban-cards" data-status-id="<?php echo (int) $status['id']; ?>">
+                                <?php foreach ($tickets_by_status[(int) $status['id']] as $ticket):
+                                    $priority_color = $ticket['priority_color'] ?? '#94a3b8';
+                                    $is_overdue = !empty($ticket['due_date']) && empty($ticket['is_closed']) && strtotime($ticket['due_date']) < time();
+                                    $assignee_label = '';
+                                    if (!empty($ticket['assignee_first_name'])) {
+                                        $assignee_label = $ticket['assignee_first_name'] . ' ' . mb_substr($ticket['assignee_last_name'] ?? '', 0, 1) . '.';
+                                    }
+                                ?>
+                                    <div class="kanban-card" <?php if ($can_drag): ?>draggable="true"<?php endif; ?>
+                                         data-ticket-id="<?php echo (int) $ticket['id']; ?>"
+                                         data-status-id="<?php echo (int) $ticket['status_id']; ?>">
+                                        <a href="<?php echo ticket_url($ticket); ?>" class="kanban-card-link">
+                                            <div class="kanban-card-top">
+                                                <span class="kanban-card-code"><?php echo e(get_ticket_code($ticket['id'])); ?></span>
+                                                <?php if (!empty($ticket['due_date'])): ?>
+                                                    <span class="kanban-card-due<?php echo $is_overdue ? ' overdue' : ''; ?>">
+                                                        <?php echo date('d.m.', strtotime($ticket['due_date'])); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="kanban-card-title"><?php echo e($ticket['title']); ?></div>
+                                            <div class="kanban-card-meta">
+                                                <?php if (!empty($ticket['priority_name'])): ?>
+                                                    <span class="kanban-card-priority" style="background: <?php echo e($priority_color); ?>20; color: <?php echo e($priority_color); ?>;">
+                                                        <?php echo e($ticket['priority_name']); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($ticket['attachment_count']) && $ticket['attachment_count'] > 0): ?>
+                                                    <span class="kanban-card-icon" title="<?php echo e(t('Attachments')); ?>">
+                                                        <?php echo get_icon('paperclip', 'w-3 h-3'); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php if ($assignee_label): ?>
+                                                    <span class="kanban-card-assignee"><?php echo e($assignee_label); ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </a>
+                                        <?php if ($can_drag): ?>
+                                            <select class="kanban-mobile-status" data-ticket-id="<?php echo (int) $ticket['id']; ?>" aria-label="<?php echo e(t('Move to')); ?>">
+                                                <?php foreach ($statuses as $opt_status): ?>
+                                                    <option value="<?php echo (int) $opt_status['id']; ?>" <?php echo (int) $opt_status['id'] === (int) $ticket['status_id'] ? 'selected' : ''; ?>>
+                                                        <?php echo e($opt_status['name']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                        <div class="kanban-cards" data-status-id="<?php echo (int)$status['id']; ?>">
-                            <?php foreach ($tickets_by_status[(int)$status['id']] as $ticket):
-                                $priority_color = $ticket['priority_color'] ?? '#94a3b8';
-                                $is_overdue = !empty($ticket['due_date']) && empty($ticket['is_closed']) && strtotime($ticket['due_date']) < time();
-                                $assignee_label = '';
-                                if (!empty($ticket['assignee_first_name'])) {
-                                    $assignee_label = $ticket['assignee_first_name'] . ' ' . mb_substr($ticket['assignee_last_name'] ?? '', 0, 1) . '.';
-                                }
-                            ?>
-                                <div class="kanban-card" <?php if ($can_drag): ?>draggable="true"<?php endif; ?>
-                                     data-ticket-id="<?php echo (int)$ticket['id']; ?>"
-                                     data-status-id="<?php echo (int)$ticket['status_id']; ?>">
-                                    <a href="<?php echo ticket_url($ticket); ?>" class="kanban-card-link">
-                                        <div class="kanban-card-top">
-                                            <span class="kanban-card-code"><?php echo e(get_ticket_code($ticket['id'])); ?></span>
-                                            <?php if (!empty($ticket['due_date'])): ?>
-                                                <span class="kanban-card-due<?php echo $is_overdue ? ' overdue' : ''; ?>">
-                                                    <?php echo date('d.m.', strtotime($ticket['due_date'])); ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="kanban-card-title"><?php echo e($ticket['title']); ?></div>
-                                        <div class="kanban-card-meta">
-                                            <?php if (!empty($ticket['priority_name'])): ?>
-                                                <span class="kanban-card-priority" style="background: <?php echo e($priority_color); ?>20; color: <?php echo e($priority_color); ?>;">
-                                                    <?php echo e($ticket['priority_name']); ?>
-                                                </span>
-                                            <?php endif; ?>
-                                            <?php if (!empty($ticket['attachment_count']) && $ticket['attachment_count'] > 0): ?>
-                                                <span class="kanban-card-icon" title="<?php echo e(t('Attachments')); ?>">
-                                                    <?php echo get_icon('paperclip', 'w-3 h-3'); ?>
-                                                </span>
-                                            <?php endif; ?>
-                                            <?php if ($assignee_label): ?>
-                                                <span class="kanban-card-assignee"><?php echo e($assignee_label); ?></span>
-                                            <?php endif; ?>
-                                        </div>
-                                    </a>
-                                    <?php if ($can_drag): ?>
-                                        <select class="kanban-mobile-status" data-ticket-id="<?php echo (int)$ticket['id']; ?>" aria-label="<?php echo e(t('Move to')); ?>">
-                                            <?php foreach ($statuses as $opt_status): ?>
-                                                <option value="<?php echo (int)$opt_status['id']; ?>" <?php echo (int)$opt_status['id'] === (int)$ticket['status_id'] ? 'selected' : ''; ?>>
-                                                    <?php echo e($opt_status['name']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php if ($board_group['name'] === 'closed'): ?>
                     </div>
-                <?php endforeach; ?>
-            </div>
+                <?php endif; ?>
+            <?php endforeach; ?>
         <?php else: ?>
         <?php
         // Check if any filters are active
@@ -1358,33 +1453,6 @@ include BASE_PATH . '/includes/components/page-header.php';
         <?php endif; ?>
 
         <!-- Mobile List View -->
-        <?php
-        $active_tickets = [];
-        $closed_tickets = [];
-        $statuses_by_id = [];
-        $is_closed_filter_active = false;
-        foreach ($statuses as $s) {
-            $statuses_by_id[$s['id']] = $s;
-            if ($status_id == $s['id'] && !empty($s['is_closed'])) {
-                $is_closed_filter_active = true;
-            }
-        }
-
-        foreach ($tickets as $t) {
-            if (!$is_closed_filter_active && !empty($statuses_by_id[$t['status_id']]['is_closed'])) {
-                $closed_tickets[] = $t;
-            } else {
-                $active_tickets[] = $t;
-            }
-        }
-        
-        $ticket_groups = [
-            ['name' => 'active', 'label' => '', 'tickets' => $active_tickets, 'hidden' => false],
-        ];
-        if (!empty($closed_tickets)) {
-            $ticket_groups[] = ['name' => 'closed', 'label' => t('Closed') . ' (' . count($closed_tickets) . ')', 'tickets' => $closed_tickets, 'hidden' => true];
-        }
-        ?>
         <div class="block lg:hidden">
             <?php foreach ($ticket_groups as $group): ?>
                 <?php if ($group['name'] === 'closed'): ?>

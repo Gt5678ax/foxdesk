@@ -102,9 +102,15 @@ function api_push_notifications(): void
              FROM notifications n
              WHERE n.user_id = ? AND n.is_read = 0
              ORDER BY n.created_at DESC
-             LIMIT 3",
+             LIMIT 10",
             [(int) $user['id']]
         );
+
+        if (function_exists('filter_notifications_for_user')) {
+            $rows = array_slice(filter_notifications_for_user($rows, (int) $user['id']), 0, 3);
+        } else {
+            $rows = array_slice($rows, 0, 3);
+        }
 
         $app_url = function_exists('get_app_url') ? get_app_url() : '';
 

@@ -125,10 +125,11 @@ function create_notifications_for_users(array $user_ids, string $type, ?int $tic
     // Check which users have in-app notifications enabled
     $placeholders = implode(',', array_fill(0, count($user_ids), '?'));
     $users = db_fetch_all(
-        "SELECT id FROM users WHERE id IN ($placeholders) AND is_active = 1
+        "SELECT * FROM users WHERE id IN ($placeholders) AND is_active = 1
          AND (in_app_notifications_enabled IS NULL OR in_app_notifications_enabled = 1)",
         array_values($user_ids)
     );
+    $ticket = $ticket_id && function_exists('get_ticket') ? get_ticket((int) $ticket_id) : null;
 
     $now = date('Y-m-d H:i:s');
     $json = json_encode($data, JSON_UNESCAPED_UNICODE);
@@ -136,6 +137,10 @@ function create_notifications_for_users(array $user_ids, string $type, ?int $tic
     $notified_user_ids = [];
 
     foreach ($users as $u) {
+        if ($ticket && function_exists('can_see_ticket') && !can_see_ticket($ticket, $u)) {
+            continue;
+        }
+
         // Check per-type notification preference
         if (function_exists('user_wants_notification') && !user_wants_notification((int) $u['id'], $type)) {
             continue;
@@ -255,6 +260,85 @@ function user_wants_notification(int $user_id, string $type): bool
     return $prefs[$type] ?? true;
 }
 
+/**
+ * Resolve the user record used for notification visibility checks.
+ */
+function get_notification_visibility_user(int $user_id): ?array
+{
+    static $cache = [];
+    if (array_key_exists($user_id, $cache)) {
+        return $cache[$user_id];
+    }
+
+    $current = function_exists('current_user') ? current_user() : null;
+    if ($current && (int) ($current['id'] ?? 0) === $user_id) {
+        $cache[$user_id] = $current;
+        return $cache[$user_id];
+    }
+
+    $cache[$user_id] = function_exists('get_user') ? get_user($user_id) : null;
+    return $cache[$user_id];
+}
+
+/**
+ * Check whether a notification still points to a ticket visible to the user.
+ */
+function notification_is_visible_to_user(array $notification, array $user): bool
+{
+    $ticket_id = (int) ($notification['ticket_id'] ?? 0);
+    if ($ticket_id <= 0) {
+        return true;
+    }
+
+    if (($user['role'] ?? '') === 'admin') {
+        return true;
+    }
+
+    if (!function_exists('get_ticket') || !function_exists('can_see_ticket')) {
+        return true;
+    }
+
+    static $ticket_cache = [];
+    if (!array_key_exists($ticket_id, $ticket_cache)) {
+        $ticket_cache[$ticket_id] = get_ticket($ticket_id);
+    }
+
+    $ticket = $ticket_cache[$ticket_id];
+    if (!$ticket) {
+        return false;
+    }
+
+    return can_see_ticket($ticket, $user);
+}
+
+/**
+ * Filter out notifications for tickets the user can no longer access.
+ */
+function filter_notifications_for_user(array $notifications, int $user_id): array
+{
+    if (empty($notifications)) {
+        return [];
+    }
+
+    $user = get_notification_visibility_user($user_id);
+    if (!$user) {
+        return [];
+    }
+
+    if (($user['role'] ?? '') === 'admin') {
+        return array_values($notifications);
+    }
+
+    $visible = [];
+    foreach ($notifications as $notification) {
+        if (notification_is_visible_to_user($notification, $user)) {
+            $visible[] = $notification;
+        }
+    }
+
+    return $visible;
+}
+
 // ── Read ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -272,22 +356,45 @@ function get_user_notifications(int $user_id, int $limit = 50, int $offset = 0, 
     $resolved_filter = ($exclude_resolved && column_exists('notifications', 'is_resolved'))
         ? 'AND (n.is_resolved = 0 OR n.is_resolved IS NULL)' : '';
 
-    $rows = db_fetch_all(
-        "SELECT n.*, u.first_name AS actor_first_name, u.last_name AS actor_last_name,
-                u.avatar AS actor_avatar, u.email AS actor_email
-         FROM notifications n
-         LEFT JOIN users u ON u.id = n.actor_id
-         WHERE n.user_id = ? $resolved_filter
-         ORDER BY n.created_at DESC
-         LIMIT ? OFFSET ?",
-        [$user_id, $limit, $offset]
-    );
+    $target_count = max(0, $offset) + max(1, $limit);
+    $batch_size = max(50, $limit);
+    $scan_offset = 0;
+    $scan_batches = 0;
+    $visible_rows = [];
 
-    // Decode JSON data
-    foreach ($rows as &$row) {
-        $row['data'] = json_decode($row['data'] ?? '{}', true) ?: [];
+    while (count($visible_rows) < $target_count && $scan_batches < 10) {
+        $rows = db_fetch_all(
+            "SELECT n.*, u.first_name AS actor_first_name, u.last_name AS actor_last_name,
+                    u.avatar AS actor_avatar, u.email AS actor_email
+             FROM notifications n
+             LEFT JOIN users u ON u.id = n.actor_id
+             WHERE n.user_id = ? $resolved_filter
+             ORDER BY n.created_at DESC
+             LIMIT ? OFFSET ?",
+            [$user_id, $batch_size, $scan_offset]
+        );
+
+        if (empty($rows)) {
+            break;
+        }
+
+        foreach ($rows as &$row) {
+            $row['data'] = json_decode($row['data'] ?? '{}', true) ?: [];
+        }
+        unset($row);
+
+        $visible_rows = array_merge($visible_rows, filter_notifications_for_user($rows, $user_id));
+
+        $fetched_count = count($rows);
+        $scan_offset += $fetched_count;
+        $scan_batches++;
+
+        if ($fetched_count < $batch_size) {
+            break;
+        }
     }
-    unset($row);
+
+    $rows = array_slice($visible_rows, max(0, $offset), $limit);
 
     $unread = get_unread_notification_count($user_id);
 
@@ -304,13 +411,14 @@ function get_unread_notification_count(int $user_id): int
     $resolved_filter = column_exists('notifications', 'is_resolved')
         ? 'AND is_resolved = 0' : '';
 
-    $row = db_fetch_one(
-        "SELECT COUNT(*) AS cnt FROM notifications
-         WHERE user_id = ? AND is_read = 0 $resolved_filter",
+    $rows = db_fetch_all(
+        "SELECT id, ticket_id FROM notifications
+         WHERE user_id = ? AND is_read = 0 $resolved_filter
+         ORDER BY created_at DESC",
         [$user_id]
     );
 
-    return (int) ($row['cnt'] ?? 0);
+    return count(filter_notifications_for_user($rows, $user_id));
 }
 
 /**
@@ -341,6 +449,21 @@ function mark_ticket_notifications_read(int $ticket_id, int $user_id): bool
         "UPDATE notifications SET is_read = 1 WHERE ticket_id = ? AND user_id = ? AND is_read = 0",
         [$ticket_id, $user_id]
     );
+
+    if (column_exists('notifications', 'is_resolved')) {
+        try {
+            db_execute(
+                "UPDATE notifications SET is_resolved = 1
+                 WHERE ticket_id = ? AND user_id = ? AND is_resolved = 0
+                 AND (type IN ('assigned_to_you', 'due_date_reminder')
+                      OR (type = 'new_comment' AND JSON_EXTRACT(data, '$.action_required') = true))",
+                [$ticket_id, $user_id]
+            );
+        } catch (Throwable $e) {
+            // Silent — don't break read-state updates
+        }
+    }
+
     return true;
 }
 

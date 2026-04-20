@@ -3,7 +3,7 @@
  * Uses HTML5 Drag and Drop API, calls existing change-status API endpoint.
  */
 (function () {
-    var board = document.querySelector('.kanban-board');
+    var board = document.querySelector('.kanban-board-wrapper');
     if (!board) return;
 
     var draggedCard = null;
@@ -251,6 +251,15 @@
                 }
             }
         });
+
+        var closedSummary = document.getElementById('kanban-closed-count');
+        if (closedSummary) {
+            var closedCount = 0;
+            board.querySelectorAll('.kanban-column[data-is-closed="1"]').forEach(function (col) {
+                closedCount += col.querySelectorAll('.kanban-card').length;
+            });
+            closedSummary.textContent = closedCount;
+        }
     }
 
     function updateMobileSelect(card, statusId) {

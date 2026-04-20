@@ -1,6 +1,6 @@
 # FoxDesk — User Manual
 
-> **Version 0.3.100** | Self-hosted PHP helpdesk & time-tracking platform
+> **Version 0.3.101** | Self-hosted PHP helpdesk & time-tracking platform
 
 ---
 
