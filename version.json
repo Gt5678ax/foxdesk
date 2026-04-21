@@ -1,12 +1,15 @@
 {
-    "version": "0.3.101",
-    "date": "2026-04-20",
+    "version": "0.3.102",
+    "date": "2026-04-21",
     "min_php": "8.1",
     "changelog": [
-        "Notifications now respect ticket visibility, so non-admin users only see alerts for tickets they can access",
-        "Opening a ticket now resolves its action-required notifications instead of leaving them active after they were reviewed",
-        "Kanban board now keeps closed tickets in a separate collapsed section instead of mixing them into the main work columns",
-        "Push notifications and unread counters now ignore stale notifications for inaccessible tickets"
+        "Fixed invalid due date validation so ticket creation stops instead of silently dropping broken dates",
+        "Fixed quick manual time entry so clearing a duration fully cancels the pending time log",
+        "Fixed overdue handling for deadlines set exactly at midnight",
+        "Fixed inline due date editing so overdue state updates immediately without a page reload",
+        "Protected the last active admin from being deactivated or demoted",
+        "Fixed scheduled report persistence, organization updates, and next due date calculation in admin",
+        "Improved kanban board layout on wide screens for small and medium status counts"
     ],
     "delete_files": []
 }
