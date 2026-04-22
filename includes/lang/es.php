@@ -1070,6 +1070,9 @@ return [
     // Auto-update system
     'Automatic updates' => 'Actualizaciones automáticas',
     'Manual update' => 'Actualización manual',
+    'Kanban board' => 'Tablero Kanban',
+    'Hide completed cards after' => 'Ocultar tarjetas completadas después de',
+    'Completed cards older than this stay in the collapsed Closed section on the board. Default is 7 days.' => 'Las tarjetas completadas más antiguas que este límite permanecen en la sección Cerrado colapsada del tablero. El valor predeterminado es 7 días.',
     'FoxDesk {version} is available!' => '¡FoxDesk {version} está disponible!',
     'is available' => 'está disponible',
     'Update now' => 'Actualizar ahora',

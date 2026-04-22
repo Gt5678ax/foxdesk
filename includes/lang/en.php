@@ -1069,6 +1069,9 @@ return [
     // Auto-update system
     'Automatic updates' => 'Automatic updates',
     'Manual update' => 'Manual update',
+    'Kanban board' => 'Kanban board',
+    'Hide completed cards after' => 'Hide completed cards after',
+    'Completed cards older than this stay in the collapsed Closed section on the board. Default is 7 days.' => 'Completed cards older than this stay in the collapsed Closed section on the board. Default is 7 days.',
     'FoxDesk {version} is available!' => 'FoxDesk {version} is available!',
     'is available' => 'is available',
     'Update now' => 'Update now',

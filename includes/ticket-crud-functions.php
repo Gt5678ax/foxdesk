@@ -355,6 +355,43 @@ function is_due_date_overdue($due_date, $is_closed = false) {
     return $dt < new DateTime();
 }
 
+function get_kanban_closed_archive_days(): int
+{
+    $raw = trim((string) get_setting('kanban_hide_closed_after_days', '7'));
+    $days = (int) $raw;
+    if ($days < 1) {
+        $days = 7;
+    }
+
+    return min($days, 365);
+}
+
+function should_hide_closed_ticket_in_board(array $ticket, ?int $days = null): bool
+{
+    $is_closed = !empty($ticket['is_closed']) || !empty($ticket['status_is_closed']);
+    if (!$is_closed) {
+        return false;
+    }
+
+    $days = $days ?? get_kanban_closed_archive_days();
+    if ($days < 1) {
+        return false;
+    }
+
+    $reference = trim((string) ($ticket['updated_at'] ?? $ticket['created_at'] ?? ''));
+    if ($reference === '') {
+        return false;
+    }
+
+    try {
+        $updated_at = new DateTimeImmutable($reference);
+        $cutoff = (new DateTimeImmutable())->sub(new DateInterval('P' . $days . 'D'));
+        return $updated_at < $cutoff;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
 function create_ticket($data) {
     $default_status = get_default_status();
     $default_priority = get_default_priority();

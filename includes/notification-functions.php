@@ -137,7 +137,12 @@ function create_notifications_for_users(array $user_ids, string $type, ?int $tic
     $notified_user_ids = [];
 
     foreach ($users as $u) {
-        if ($ticket && function_exists('can_see_ticket') && !can_see_ticket($ticket, $u)) {
+        if ($ticket && !notification_is_visible_to_user([
+            'ticket_id' => $ticket_id,
+            'type' => $type,
+            'data' => $data,
+            'user_id' => (int) ($u['id'] ?? 0),
+        ], $u)) {
             continue;
         }
 
@@ -281,7 +286,129 @@ function get_notification_visibility_user(int $user_id): ?array
 }
 
 /**
- * Check whether a notification still points to a ticket visible to the user.
+ * Decode a notification data payload into an array.
+ */
+function get_notification_data_payload(array $notification): array
+{
+    $data = $notification['data'] ?? [];
+    if (is_array($data)) {
+        return $data;
+    }
+
+    if (is_string($data) && $data !== '') {
+        $decoded = json_decode($data, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+    }
+
+    return [];
+}
+
+/**
+ * Resolve a ticket record used in notification visibility checks.
+ */
+function get_notification_visibility_ticket(int $ticket_id): ?array
+{
+    static $cache = [];
+    if (!array_key_exists($ticket_id, $cache)) {
+        $cache[$ticket_id] = function_exists('get_ticket') ? get_ticket($ticket_id) : null;
+    }
+
+    return $cache[$ticket_id];
+}
+
+/**
+ * Get all direct ticket participants relevant for non-admin notification visibility.
+ */
+function get_notification_ticket_relevant_user_ids(int $ticket_id): array
+{
+    static $cache = [];
+    if (array_key_exists($ticket_id, $cache)) {
+        return $cache[$ticket_id];
+    }
+
+    $ids = [];
+    $ticket = get_notification_visibility_ticket($ticket_id);
+
+    if ($ticket) {
+        $creator_id = (int) ($ticket['user_id'] ?? 0);
+        $assignee_id = (int) ($ticket['assignee_id'] ?? 0);
+
+        if ($creator_id > 0) {
+            $ids[] = $creator_id;
+        }
+
+        if ($assignee_id > 0) {
+            $ids[] = $assignee_id;
+        }
+    }
+
+    try {
+        $commenters = db_fetch_all(
+            "SELECT DISTINCT user_id FROM comments WHERE ticket_id = ? AND user_id IS NOT NULL",
+            [$ticket_id]
+        );
+
+        foreach ($commenters as $commenter) {
+            $commenter_id = (int) ($commenter['user_id'] ?? 0);
+            if ($commenter_id > 0) {
+                $ids[] = $commenter_id;
+            }
+        }
+    } catch (Throwable $e) {
+        // Ignore legacy installs with inconsistent comments state.
+    }
+
+    if (function_exists('ticket_access_table_exists') && ticket_access_table_exists()) {
+        try {
+            $shared_users = db_fetch_all(
+                "SELECT DISTINCT user_id FROM ticket_access WHERE ticket_id = ? AND user_id IS NOT NULL",
+                [$ticket_id]
+            );
+
+            foreach ($shared_users as $shared_user) {
+                $shared_user_id = (int) ($shared_user['user_id'] ?? 0);
+                if ($shared_user_id > 0) {
+                    $ids[] = $shared_user_id;
+                }
+            }
+        } catch (Throwable $e) {
+            // Ignore missing table state during rolling updates.
+        }
+    }
+
+    $cache[$ticket_id] = array_values(array_unique($ids));
+    return $cache[$ticket_id];
+}
+
+/**
+ * Check whether a ticket notification is still relevant to an agent user.
+ */
+function notification_is_relevant_to_agent(array $notification, array $user, array $ticket): bool
+{
+    $user_id = (int) ($user['id'] ?? 0);
+    if ($user_id <= 0) {
+        return false;
+    }
+
+    $type = (string) ($notification['type'] ?? '');
+    $data = get_notification_data_payload($notification);
+
+    if ($type === 'mentioned') {
+        return true;
+    }
+
+    if (in_array($type, ['assigned_to_you', 'due_date_reminder'], true)) {
+        $assigned_user_id = (int) ($data['assignee_id'] ?? ($ticket['assignee_id'] ?? 0));
+        return $assigned_user_id > 0 && $assigned_user_id === $user_id;
+    }
+
+    return in_array($user_id, get_notification_ticket_relevant_user_ids((int) $ticket['id']), true);
+}
+
+/**
+ * Check whether a notification still points to a ticket the user should see.
  */
 function notification_is_visible_to_user(array $notification, array $user): bool
 {
@@ -298,21 +425,24 @@ function notification_is_visible_to_user(array $notification, array $user): bool
         return true;
     }
 
-    static $ticket_cache = [];
-    if (!array_key_exists($ticket_id, $ticket_cache)) {
-        $ticket_cache[$ticket_id] = get_ticket($ticket_id);
-    }
-
-    $ticket = $ticket_cache[$ticket_id];
+    $ticket = get_notification_visibility_ticket($ticket_id);
     if (!$ticket) {
         return false;
     }
 
-    return can_see_ticket($ticket, $user);
+    if (!can_see_ticket($ticket, $user)) {
+        return false;
+    }
+
+    if (($user['role'] ?? '') === 'agent') {
+        return notification_is_relevant_to_agent($notification, $user, $ticket);
+    }
+
+    return true;
 }
 
 /**
- * Filter out notifications for tickets the user can no longer access.
+ * Filter out notifications the user should no longer see.
  */
 function filter_notifications_for_user(array $notifications, int $user_id): array
 {

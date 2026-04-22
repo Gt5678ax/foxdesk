@@ -97,9 +97,12 @@
         var newStatusId = col.dataset.statusId;
         var ticketId = draggedCard.dataset.ticketId;
         var oldStatusId = draggedCard.dataset.statusId;
+        var oldScope = draggedCard.dataset.kanbanScope || 'main';
+        var targetIsClosed = col.dataset.isClosed === '1';
+        var newScope = targetIsClosed && oldScope === 'archived' ? 'archived' : 'main';
 
         // Insert card where placeholder is
-        var targetCards = col.querySelector('.kanban-cards');
+        var targetCards = findCardsContainer(newStatusId, newScope) || col.querySelector('.kanban-cards');
         var savedSource = sourceColumn;
 
         if (placeholder && placeholder.parentNode === targetCards) {
@@ -111,6 +114,9 @@
         removePlaceholderGlobal();
 
         if (newStatusId === oldStatusId) {
+            if (newScope !== oldScope && savedSource) {
+                savedSource.appendChild(draggedCard);
+            }
             cleanup();
             return;
         }
@@ -122,6 +128,7 @@
         setTimeout(function () { droppedCard.classList.remove('just-dropped'); }, 500);
 
         draggedCard.dataset.statusId = newStatusId;
+        draggedCard.dataset.kanbanScope = newScope;
         updateMobileSelect(draggedCard, newStatusId);
         cleanup();
         animateColumnCounts();
@@ -134,9 +141,14 @@
                 card.classList.add('revert-shake');
                 setTimeout(function () { card.classList.remove('revert-shake'); }, 400);
             }
-            savedSource.appendChild(card || document.querySelector('.kanban-card[data-ticket-id="' + ticketId + '"]'));
+            var sourceTarget = savedSource || findCardsContainer(oldStatusId, oldScope);
+            var revertCard = card || document.querySelector('.kanban-card[data-ticket-id="' + ticketId + '"]');
+            if (sourceTarget && revertCard) {
+                sourceTarget.appendChild(revertCard);
+            }
             if (card) {
                 card.dataset.statusId = oldStatusId;
+                card.dataset.kanbanScope = oldScope;
                 updateMobileSelect(card, oldStatusId);
             }
             animateColumnCounts();
@@ -180,6 +192,10 @@
         var newStatusId = sel.value;
         var card = sel.closest('.kanban-card');
         var oldStatusId = card.dataset.statusId;
+        var oldScope = card.dataset.kanbanScope || 'main';
+        var selectedOption = sel.options[sel.selectedIndex];
+        var targetIsClosed = !!selectedOption && selectedOption.dataset.isClosed === '1';
+        var targetScope = targetIsClosed && oldScope === 'archived' ? 'archived' : 'main';
 
         if (newStatusId === oldStatusId) return;
 
@@ -189,20 +205,22 @@
             card.classList.remove('card-fly-out');
 
             // Move card to new column
-            var targetCol = board.querySelector('.kanban-cards[data-status-id="' + newStatusId + '"]');
+            var targetCol = findCardsContainer(newStatusId, targetScope);
             if (targetCol) {
                 targetCol.appendChild(card);
                 card.dataset.statusId = newStatusId;
+                card.dataset.kanbanScope = targetScope;
                 card.classList.add('card-fly-in');
                 setTimeout(function () { card.classList.remove('card-fly-in'); }, 350);
                 animateColumnCounts();
             }
 
             changeStatus(ticketId, newStatusId, function onError() {
-                var sourceCol = board.querySelector('.kanban-cards[data-status-id="' + oldStatusId + '"]');
+                var sourceCol = findCardsContainer(oldStatusId, oldScope);
                 if (sourceCol) {
                     sourceCol.appendChild(card);
                     card.dataset.statusId = oldStatusId;
+                    card.dataset.kanbanScope = oldScope;
                     sel.value = oldStatusId;
                     card.classList.add('revert-shake');
                     setTimeout(function () { card.classList.remove('revert-shake'); }, 400);
@@ -238,6 +256,15 @@
         placeholder = null;
     }
 
+    function findCardsContainer(statusId, preferredScope) {
+        var selector = '.kanban-cards[data-status-id="' + statusId + '"]';
+        if (preferredScope) {
+            var scoped = board.querySelector(selector + '[data-kanban-scope="' + preferredScope + '"]');
+            if (scoped) return scoped;
+        }
+        return board.querySelector(selector + '[data-kanban-scope="main"]') || board.querySelector(selector);
+    }
+
     function animateColumnCounts() {
         board.querySelectorAll('.kanban-column').forEach(function (col) {
             var count = col.querySelectorAll('.kanban-card').length;
@@ -255,7 +282,7 @@
         var closedSummary = document.getElementById('kanban-closed-count');
         if (closedSummary) {
             var closedCount = 0;
-            board.querySelectorAll('.kanban-column[data-is-closed="1"]').forEach(function (col) {
+            board.querySelectorAll('.kanban-column[data-is-closed="1"][data-kanban-scope="archived"]').forEach(function (col) {
                 closedCount += col.querySelectorAll('.kanban-card').length;
             });
             closedSummary.textContent = closedCount;

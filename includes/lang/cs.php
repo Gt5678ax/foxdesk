@@ -1069,6 +1069,9 @@ return [
     // Auto-update system
     'Automatic updates' => 'Automatické aktualizace',
     'Manual update' => 'Ruční aktualizace',
+    'Kanban board' => 'Kanban nástěnka',
+    'Hide completed cards after' => 'Skrýt dokončené karty po',
+    'Completed cards older than this stay in the collapsed Closed section on the board. Default is 7 days.' => 'Dokončené karty starší než tento limit zůstanou na nástěnce ve sbalené sekci Uzavřené. Výchozí hodnota je 7 dní.',
     'FoxDesk {version} is available!' => 'FoxDesk {version} je k dispozici!',
     'is available' => 'je k dispozici',
     'Update now' => 'Aktualizovat',

@@ -84,6 +84,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('admin', ['section' => 'settings', 'tab' => 'system']);
     }
 
+    if (isset($_POST['save_kanban_settings'])) {
+        $hide_closed_after_days = (int) ($_POST['kanban_hide_closed_after_days'] ?? 7);
+        $hide_closed_after_days = max(1, min(365, $hide_closed_after_days));
+
+        save_setting('kanban_hide_closed_after_days', (string) $hide_closed_after_days);
+        $settings_audit('kanban_settings_changed', [
+            'hide_closed_after_days' => $hide_closed_after_days,
+        ]);
+        flash(t('Settings saved.'), 'success');
+        redirect('admin', ['section' => 'settings', 'tab' => 'system']);
+    }
+
     // Save pseudo-cron setting
     if (isset($_POST['save_pseudo_cron_settings'])) {
         $enabled = !empty($_POST['pseudo_cron_enabled']) ? '1' : '0';
@@ -2231,6 +2243,37 @@ include BASE_PATH . '/includes/components/page-header.php';
                     <?php echo e(t('Tasks run in the background on page loads. No server cron job needed.')); ?>
                 </p>
             <?php endif; ?>
+        </div>
+
+        <!-- Kanban Board Settings -->
+        <div class="card card-body mt-2">
+            <h3 class="text-xs font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted);">
+                <?php echo e(t('Kanban board')); ?>
+            </h3>
+            <p class="text-xs mb-3" style="color: var(--text-muted);">
+                <?php echo e(t('Completed cards older than this stay in the collapsed Closed section on the board. Default is 7 days.')); ?>
+            </p>
+            <form method="post" class="flex flex-wrap items-end gap-3">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="save_kanban_settings" value="1">
+                <label class="block">
+                    <span class="text-xs font-medium" style="color: var(--text-secondary);">
+                        <?php echo e(t('Hide completed cards after')); ?>
+                    </span>
+                    <div class="mt-1 flex items-center gap-2">
+                        <input type="number"
+                               name="kanban_hide_closed_after_days"
+                               min="1"
+                               max="365"
+                               value="<?php echo (int) (function_exists('get_kanban_closed_archive_days') ? get_kanban_closed_archive_days() : 7); ?>"
+                               class="form-input form-input-sm w-24">
+                        <span class="text-xs" style="color: var(--text-muted);"><?php echo e(t('days')); ?></span>
+                    </div>
+                </label>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <?php echo get_icon('save', 'mr-1'); ?><?php echo e(t('Save')); ?>
+                </button>
+            </form>
         </div>
 
         <!-- Application Updates Section (Manual Upload) -->

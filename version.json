@@ -1,15 +1,12 @@
 {
-    "version": "0.3.102",
-    "date": "2026-04-21",
+    "version": "0.3.103",
+    "date": "2026-04-22",
     "min_php": "8.1",
     "changelog": [
-        "Fixed invalid due date validation so ticket creation stops instead of silently dropping broken dates",
-        "Fixed quick manual time entry so clearing a duration fully cancels the pending time log",
-        "Fixed overdue handling for deadlines set exactly at midnight",
-        "Fixed inline due date editing so overdue state updates immediately without a page reload",
-        "Protected the last active admin from being deactivated or demoted",
-        "Fixed scheduled report persistence, organization updates, and next due date calculation in admin",
-        "Improved kanban board layout on wide screens for small and medium status counts"
+        "Added an admin setting to hide completed kanban cards after a configurable number of days",
+        "Moved older completed tickets into a collapsed Closed section while keeping recent completions visible on the board",
+        "Improved kanban drag and drop and status counts for archived closed cards",
+        "Fixed agent notification visibility so agents only see ticket notifications that directly involve them"
     ],
     "delete_files": []
 }

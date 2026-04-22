@@ -3,7 +3,7 @@
 Open-source helpdesk and ticketing system built with PHP, Tailwind CSS, and Alpine.js.
 
 **Website:** [foxdesk.org](https://foxdesk.org)
-**Current Version:** `0.3.102` (`2026-04-21`)
+**Current Version:** `0.3.103` (`2026-04-22`)
 
 ---
 

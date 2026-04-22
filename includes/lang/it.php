@@ -1070,6 +1070,9 @@ return [
     // Auto-update system
     'Automatic updates' => 'Aggiornamenti automatici',
     'Manual update' => 'Aggiornamento manuale',
+    'Kanban board' => 'Bacheca Kanban',
+    'Hide completed cards after' => 'Nascondi le schede completate dopo',
+    'Completed cards older than this stay in the collapsed Closed section on the board. Default is 7 days.' => 'Le schede completate più vecchie di questo limite restano nella sezione Chiuso compressa della bacheca. Il valore predefinito è 7 giorni.',
     'FoxDesk {version} is available!' => 'FoxDesk {version} è disponibile!',
     'is available' => 'è disponibile',
     'Update now' => 'Aggiorna ora',
