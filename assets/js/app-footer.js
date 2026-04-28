@@ -417,10 +417,10 @@ document.addEventListener('click', function(event) {
                     window.location.href = 'index.php?page=dashboard';
                 }
             } else {
-                alert(data.error || 'Error');
+                alert(data.error || cfg.errorLabel || 'Error');
             }
         })
-        .catch(function() { alert('Error'); });
+        .catch(function() { alert(cfg.errorLabel || 'Error'); });
     }
 
     function stopTimer(ticketId) {
@@ -433,14 +433,14 @@ document.addEventListener('click', function(event) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                if (typeof showAppToast === 'function') showAppToast(data.message || 'Timer stopped.', 'success');
+                if (typeof showAppToast === 'function') showAppToast(data.message || cfg.timerStoppedLabel || 'Timer stopped.', 'success');
                 document.dispatchEvent(new Event('timerStateChanged'));
             } else {
-                if (typeof showAppToast === 'function') showAppToast(data.error || 'Error', 'error');
-                else alert(data.error || 'Error');
+                if (typeof showAppToast === 'function') showAppToast(data.error || cfg.errorLabel || 'Error', 'error');
+                else alert(data.error || cfg.errorLabel || 'Error');
             }
         })
-        .catch(function() { alert('Error'); });
+        .catch(function() { alert(cfg.errorLabel || 'Error'); });
     }
 
     // Expose for PHP-rendered sidebar buttons
@@ -515,7 +515,7 @@ document.addEventListener('click', function(event) {
                 if (data.success) {
                     document.dispatchEvent(new Event('timerStateChanged'));
                 } else {
-                    if (typeof showAppToast === 'function') showAppToast(data.error || 'Error', 'error');
+                    if (typeof showAppToast === 'function') showAppToast(data.error || cfg.errorLabel || 'Error', 'error');
                 }
             });
         });

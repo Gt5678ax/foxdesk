@@ -1007,6 +1007,10 @@ return [
     'Save instructions' => 'Save instructions',
     'Custom instructions saved.' => 'Custom instructions saved.',
     'Copy failed. Please select the text manually and copy.' => 'Copy failed. Please select the text manually and copy.',
+    'FoxDesk - Two-Factor Authentication Backup Codes' => 'FoxDesk - Two-Factor Authentication Backup Codes',
+    'Generated:' => 'Generated:',
+    'Each code can only be used once.' => 'Each code can only be used once.',
+    'Leave Start and End empty to log quick minutes ending now. If both are filled, the exact range is used instead.' => 'Leave Start and End empty to log quick minutes ending now. If both are filled, the exact range is used instead.',
     'Token:' => 'Token:',
     'API Base:' => 'API Base:',
 

@@ -326,7 +326,7 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
                                     title="<?php echo e(t('Stop timer')); ?>">
                                 <?php echo get_icon('stop', 'w-3 h-3'); ?>
                             </button>
-                            <button onclick="event.stopPropagation(); if(typeof cancelTicket==='function') cancelTicket(<?php echo (int)$stimer['ticket_id']; ?>); else if(confirm('<?php echo e(t('Cancel ticket? The ticket will be deleted.')); ?>')) fetch('index.php?page=api&action=cancel-ticket',{method:'POST',headers:{'X-CSRF-TOKEN':window.csrfToken,'Content-Type':'application/x-www-form-urlencoded'},body:'ticket_id=<?php echo (int)$stimer['ticket_id']; ?>'}).then(function(r){return r.json()}).then(function(d){if(d.success)location.reload();else alert(d.error||'Error')});"
+                            <button onclick="event.stopPropagation(); if(typeof cancelTicket==='function') cancelTicket(<?php echo (int)$stimer['ticket_id']; ?>); else if(confirm('<?php echo e(t('Cancel ticket? The ticket will be deleted.')); ?>')) fetch('index.php?page=api&action=cancel-ticket',{method:'POST',headers:{'X-CSRF-TOKEN':window.csrfToken,'Content-Type':'application/x-www-form-urlencoded'},body:'ticket_id=<?php echo (int)$stimer['ticket_id']; ?>'}).then(function(r){return r.json()}).then(function(d){if(d.success)location.reload();else alert(d.error||'<?php echo e(t('Error')); ?>')});"
                                     class="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
                                     style="color: var(--text-muted);"
                                     title="<?php echo e(t('Cancel ticket')); ?>">&times;</button>
@@ -1320,5 +1320,4 @@ if (file_exists(__DIR__ . '/pseudo-cron.php')) {
         <div class="p-2 lg:p-3 xl:p-4">
 
             <!-- JS moved to assets/js/app-header.js (defer) -->
-
 

@@ -5,6 +5,7 @@
 (function () {
     var board = document.querySelector('.kanban-board-wrapper');
     if (!board) return;
+    var cfg = window.appConfig || {};
 
     var draggedCard = null;
     var sourceColumn = null;
@@ -310,14 +311,14 @@
         .then(function (r) { return r.json(); })
         .then(function (res) {
             if (!res.success) {
-                if (window.showAppToast) window.showAppToast(res.error || 'Error', 'error');
+                if (window.showAppToast) window.showAppToast(res.error || cfg.errorLabel || 'Error', 'error');
                 if (onError) onError();
             } else {
-                if (window.showAppToast) window.showAppToast(res.message || 'Updated', 'success');
+                if (window.showAppToast) window.showAppToast(res.message || cfg.savedLabel || 'Saved', 'success');
             }
         })
         .catch(function () {
-            if (window.showAppToast) window.showAppToast('Network error', 'error');
+            if (window.showAppToast) window.showAppToast(cfg.errorLabel || 'Error', 'error');
             if (onError) onError();
         });
     }

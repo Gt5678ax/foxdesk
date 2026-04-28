@@ -94,5 +94,5 @@ function api_allowed_senders_toggle() {
 
     db_query("UPDATE allowed_senders SET active = NOT active WHERE id = ?", [$id]);
 
-    api_success(['message' => 'OK']);
+    api_success(['message' => t('Saved')]);
 }

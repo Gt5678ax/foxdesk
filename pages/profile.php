@@ -597,10 +597,10 @@ include BASE_PATH . '/includes/components/page-header.php';
                 <script>
                 function downloadBackupCodes() {
                     var codes = <?php echo json_encode($backup_codes); ?>;
-                    var text = "FoxDesk - Two-Factor Authentication Backup Codes\n";
-                    text += "Generated: " + new Date().toLocaleDateString() + "\n\n";
+                    var text = "<?php echo e(t('FoxDesk - Two-Factor Authentication Backup Codes')); ?>\n";
+                    text += "<?php echo e(t('Generated:')); ?> " + new Date().toLocaleDateString() + "\n\n";
                     codes.forEach(function(c) { text += c + "\n"; });
-                    text += "\nEach code can only be used once.";
+                    text += "\n<?php echo e(t('Each code can only be used once.')); ?>";
                     var blob = new Blob([text], {type: 'text/plain'});
                     var a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
@@ -611,7 +611,7 @@ include BASE_PATH . '/includes/components/page-header.php';
                 function copyBackupCodes() {
                     var codes = <?php echo json_encode($backup_codes); ?>;
                     navigator.clipboard.writeText(codes.join('\n')).then(function() {
-                        if (typeof showToast === 'function') showToast('<?php echo e(t('Copied to clipboard')); ?>', 'success');
+                        if (typeof showToast === 'function') showToast('<?php echo e(t('Copied!')); ?>', 'success');
                     });
                 }
                 </script>

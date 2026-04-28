@@ -1011,6 +1011,10 @@ return [
     'Save instructions' => 'Anweisungen speichern',
     'Custom instructions saved.' => 'Benutzerdefinierte Anweisungen gespeichert.',
     'Copy failed. Please select the text manually and copy.' => 'Kopieren fehlgeschlagen. Bitte wählen Sie den Text manuell aus und kopieren Sie ihn.',
+    'FoxDesk - Two-Factor Authentication Backup Codes' => 'FoxDesk - Backup-Codes für die Zwei-Faktor-Authentifizierung',
+    'Generated:' => 'Erstellt am:',
+    'Each code can only be used once.' => 'Jeder Code kann nur einmal verwendet werden.',
+    'Leave Start and End empty to log quick minutes ending now. If both are filled, the exact range is used instead.' => 'Lassen Sie Start und Ende leer, um schnelle Minuten bis jetzt zu protokollieren. Wenn beide Felder ausgefüllt sind, wird stattdessen der genaue Zeitraum verwendet.',
     'Token:' => 'Token:',
     'API Base:' => 'API-Basis:',
 

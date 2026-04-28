@@ -3410,12 +3410,12 @@ foreach ($board_closed_statuses as $status_item) {
                 saveDuration(btn.dataset.ticketId, m, '')
                     .then(function(res) {
                         if (res.success) {
-                            toast(res.message || 'OK', 'success');
+                            toast(res.message || '<?php echo e(t('Saved')); ?>', 'success');
                             setTimeout(function(){ window.location.reload(); }, 300);
                         } else {
                             chip.disabled = false;
                             chip.textContent = '+' + m;
-                            toast(res.error || 'Error', 'error');
+                            toast(res.error || '<?php echo e(t('Error')); ?>', 'error');
                         }
                     })
                     .catch(function() {
@@ -3477,12 +3477,12 @@ foreach ($board_closed_statuses as $status_item) {
             saveDuration(btn.dataset.ticketId, m, note.value.trim())
                 .then(function(res){
                     if (res.success) {
-                        toast(res.message || 'OK', 'success');
+                        toast(res.message || '<?php echo e(t('Saved')); ?>', 'success');
                         setTimeout(function(){ window.location.reload(); }, 300);
                     } else {
                         save.disabled = false;
                         save.textContent = '<?php echo e(t('Save')); ?>';
-                        toast(res.error || 'Error', 'error');
+                        toast(res.error || '<?php echo e(t('Error')); ?>', 'error');
                     }
                 });
         });

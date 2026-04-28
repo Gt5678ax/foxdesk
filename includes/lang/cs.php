@@ -1042,6 +1042,10 @@ return [
     'Save instructions' => 'Uložit instrukce',
     'Custom instructions saved.' => 'Vlastní instrukce uloženy.',
     'Copy failed. Please select the text manually and copy.' => 'Kopírování selhalo. Vyberte text ručně a zkopírujte.',
+    'FoxDesk - Two-Factor Authentication Backup Codes' => 'FoxDesk - Záložní kódy pro dvoufázové ověření',
+    'Generated:' => 'Vygenerováno:',
+    'Each code can only be used once.' => 'Každý kód lze použít pouze jednou.',
+    'Leave Start and End empty to log quick minutes ending now. If both are filled, the exact range is used instead.' => 'Ponechte Začátek a Konec prázdné pro rychlý zápis minut končící teď. Pokud vyplníte obě pole, použije se místo toho přesný rozsah.',
     'Token:' => 'Token:',
     'API Base:' => 'API Base:',
 

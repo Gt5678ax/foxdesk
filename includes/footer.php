@@ -21,6 +21,9 @@
         cancelTicketConfirm: <?php echo json_encode(t('Cancel ticket? The ticket will be deleted.')); ?>,
         cancelTicketTooltip: <?php echo json_encode(t('Cancel ticket')); ?>,
         stopTimerLabel: <?php echo json_encode(t('Stop timer')); ?>,
+        timerStoppedLabel: <?php echo json_encode(t('Timer stopped.')); ?>,
+        errorLabel: <?php echo json_encode(t('Error')); ?>,
+        savedLabel: <?php echo json_encode(t('Saved')); ?>,
         pauseLabel: <?php echo json_encode(t('Pause')); ?>,
         resumeLabel: <?php echo json_encode(t('Resume')); ?>
     };
@@ -176,4 +179,3 @@ function _lbEsc(e) { if (e.key === 'Escape') closeImagePreview(); }
 </body>
 
 </html>
-
